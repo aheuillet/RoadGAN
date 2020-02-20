@@ -1,43 +1,22 @@
-from kivymd.app import MDApp
-from kivy.factory import Factory
-from kivy.lang import Builder
+import h5py
 
-from kivymd.theming import ThemeManager
+def traverse_datasets(hdf_file):
 
-Builder.load_string(
-    '''
-#:import toast kivymd.toast.toast
+    def h5py_dataset_iterator(g, prefix=''):
+        for key in g.keys():
+            item = g[key]
+            path = f'{prefix}/{key}'
+            if isinstance(item, h5py.Dataset): # test for dataset
+                yield (path, item)
+            elif isinstance(item, h5py.Group): # test for group (go down)
+                yield from h5py_dataset_iterator(item, path)
 
-
-<MyRoot@BoxLayout>
-    orientation: 'vertical'
-
-    MDToolbar:
-        title: "Test MDDropDownItem"
-        md_bg_color: app.theme_cls.primary_color
-        elevation: 10
-        left_action_items: [['menu', lambda x: x]]
-
-    FloatLayout:
-
-        MDDropDownItem:
-            id: dropdown_item
-            pos_hint: {'center_x': 0.5, 'center_y': 0.6}
-            items: app.items
-            dropdown_bg: [1, 1, 1, 1]
-
-        MDRaisedButton:
-            pos_hint: {'center_x': 0.5, 'center_y': 0.3}
-            text: 'Chek Item'
-            on_release: toast(dropdown_item.current_item)
-''')
+    for path, _ in h5py_dataset_iterator(hdf_file):
+        yield path
 
 
-class Test(MDApp):
-
-    def build(self):
-        self.items = [f"Item {i}" for i in range(50)]
-        return Factory.MyRoot()
-
-
-Test().run()
+with h5py.File('mask_rcnn_coco.h5', 'r') as f:
+    for dset in traverse_datasets(f):
+        print('Path:', dset)
+        print('Shape:', f[dset].shape)
+        print('Data type:', f[dset].dtype)
