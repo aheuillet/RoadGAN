@@ -61,7 +61,7 @@ def traverse_datasets(hdf_file, new_file):
             item = g[key]
             path = f'{prefix}/{key}'
             if isinstance(item, h5py.Dataset): # test for dataset
-                new_file.require_dataset(path, shape=item.shape, dtype=item.dtype, data=item, maxshape=(2048, None), chunks=True)
+                new_file.require_dataset(path, shape=item.shape, dtype=item.dtype, data=item, maxshape=item.shape, chunks=True)
                 yield (path, item)
             elif isinstance(item, h5py.Group): # test for group (go down)
                 new_file.require_group(path)
@@ -119,7 +119,7 @@ def load_and_convert_coco_model(args):
     model_dict = load_object(args.coco_model_file_name)
     new_model = create_file(args.out_file_name)
     convert_coco_layers_to_cityscape_layers(model_dict, new_model)
-    return model_dict
+    return new_model
 
 
 if __name__ == '__main__':

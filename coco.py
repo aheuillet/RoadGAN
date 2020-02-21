@@ -42,10 +42,13 @@ import imgaug  # https://github.com/aleju/imgaug (pip3 install imgaug)
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from pycocotools import mask as maskUtils
+from mrcnn import visualize
+import matplotlib.pyplot as plt
 
 import zipfile
 import urllib.request
 import shutil
+import random
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath(".")
@@ -56,7 +59,7 @@ from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
 # Path to trained weights file
-COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_city.h5")
 
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
@@ -92,6 +95,7 @@ class CityConfig(Config):
     NAME= "cityscapes"
     IMAGES_PER_GPU = 1
     NUM_CLASSES = 1 + 8
+    LEARNING_RATE = 0.002
 
 
 ############################################################
@@ -373,6 +377,7 @@ def evaluate_coco(model, dataset, coco, eval_type="bbox", limit=0, image_ids=Non
         # Run detection
         t = time.time()
         r = model.detect([image], verbose=0)[0]
+        print(r)
         t_prediction += (time.time() - t)
 
         # Convert results to COCO format
@@ -397,6 +402,15 @@ def evaluate_coco(model, dataset, coco, eval_type="bbox", limit=0, image_ids=Non
         t_prediction, t_prediction / len(image_ids)))
     print("Total time: ", time.time() - t_start)
 
+def get_ax(rows=1, cols=1, size=16):
+    """Return a Matplotlib Axes array to be used in
+    all visualizations in the notebook. Provide a
+    central point to control graph sizes.
+    
+    Adjust the size attribute to control how big to render images
+    """
+    _, ax = plt.subplots(rows, cols, figsize=(size*cols, size*rows))
+    return ax
 
 ############################################################
 #  Training
@@ -457,7 +471,7 @@ if __name__ == '__main__':
     config.display()
 
     # Create model
-    if args.command == "train":
+    if args.command == "train" or args.command == "fine-tune":
         model = modellib.MaskRCNN(mode="training", config=config,
                                   model_dir=args.logs)
     else:
@@ -492,8 +506,7 @@ if __name__ == '__main__':
 
         # Validation dataset
         dataset_val = CocoDataset()
-        val_type = "val" if args.year in '2017' else "minival"
-        dataset_val.load_coco(args.dataset, val_type, year=args.year, auto_download=args.download)
+        dataset_val.load_coco(args.dataset, "val", year=args.year, auto_download=args.download)
         dataset_val.prepare()
 
         # Image Augmentation
@@ -527,15 +540,61 @@ if __name__ == '__main__':
                     epochs=160,
                     layers='all',
                     augmentation=augmentation)
+    
+    elif args.command == "fine-tune":
+        dataset_train = CocoDataset()
+        dataset_train.load_coco(args.dataset, "train", year=args.year, auto_download=args.download)
+        dataset_train.prepare()
+
+        # Validation dataset
+        dataset_val = CocoDataset()
+        dataset_val.load_coco(args.dataset, "val", year=args.year, auto_download=args.download)
+        dataset_val.prepare()
+
+        # Image Augmentation
+        # Right/Left flip 50% of the time
+        augmentation = imgaug.augmenters.Fliplr(0.5)
+
+        # print("Training network heads")
+        # model.train(dataset_train, dataset_val,
+        #             learning_rate=config.LEARNING_RATE,
+        #             epochs=10,
+        #             layers='heads',
+        #             augmentation=augmentation)
+
+        print("Fine tune all layers")
+        model.train(dataset_train, dataset_val,
+                    learning_rate=config.LEARNING_RATE / 10,
+                    epochs=5,
+                    layers='all',
+                    augmentation=augmentation)
 
     elif args.command == "evaluate":
         # Validation dataset
-        dataset_val = CocoDataset()
-        val_type = "val" if args.year in '2017' else "minival"
-        coco = dataset_val.load_coco(args.dataset, val_type, year=args.year, return_coco=True, auto_download=args.download)
-        dataset_val.prepare()
-        print("Running COCO evaluation on {} images.".format(args.limit))
-        evaluate_coco(model, dataset_val, coco, "bbox", limit=int(args.limit))
+        dataset = CocoDataset()
+        val_type = "val"
+        dataset.load_coco(args.dataset, val_type, year=args.year, return_coco=True, auto_download=args.download)
+        dataset.prepare()
+        image_id = random.choice(dataset.image_ids)
+        image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
+        info = dataset.image_info[image_id]
+        print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id, 
+                                            dataset.image_reference(image_id)))
+        # Run object detection
+        results = model.detect([image], verbose=1)
+
+        # Display results
+        ax = get_ax(1)
+        r = results[0]
+        print(r)
+        visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'], 
+                                    dataset.class_names, r['scores'], ax=ax,
+                                    title="Predictions")
+        plt.show()
+        # coco = dataset_val.load_coco(args.dataset, val_type, year=args.year, return_coco=True, auto_download=args.download)
+        # dataset_val.prepare()
+        # print("Running COCO evaluation on {} images.".format(args.limit))
+        # evaluate_coco(model, dataset_val, coco, "segm", limit=int(args.limit))
     else:
         print("'{}' is not recognized. "
               "Use 'train' or 'evaluate'".format(args.command))
