@@ -3,28 +3,50 @@ from kivy.core.window import Window
 from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.uix.modalview import ModalView
+from kivy.uix.anchorlayout import AnchorLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.metrics import dp
 
 from kivymd.uix.filemanager import MDFileManager
-from kivymd.uix.list import MDList, OneLineIconListItem, ILeftBody, IRightBody
+from kivymd.uix.list import MDList, OneLineAvatarIconListItem, ILeftBody, IRightBody
 from kivymd.uix.dropdownitem import MDDropDownItem
-from kivymd.uix.button import MDIconButton
+from kivymd.uix.button import MDIconButton, MDRaisedButton
+from kivymd.uix.dialog import BaseDialog
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
+from kivymd import images_path
 
 
 Builder.load_string('''
 
-<SettingsScenario@ModalView>
-    size_hint: 0.5, 0.5
+<SettingsScenario@BaseDialog>
+    size_hint: 0.6, 0.6
+    background: f"{images_path}ios_bg_mod.png"
+    auto_dismiss: False
 
     MDList:
-
-        OneLineIconListItem:
+        OneLineAvatarIconListItem:
             text: "Weather conditions"
             ListDropDownLeft:
                 icon: "weather-cloudy"
             ListDropDownRight:
                 items: app.weather_conditions
+        
+        OneLineAvatarIconListItem:
+            text: "Urban style"
+            ListDropDownLeft:
+                icon: "home-city"
+            ListDropDownRight:
+                items: app.urban_style
+
+    AnchorLayout:
+        anchor_x: "center"
+        anchor_y: "bottom"
+        height: dp(30)
+        MDRaisedButton:
+            text: "OK"
+            on_press: app.close_settings()
+
 
 <ExampleFileManager@BoxLayout>
     orientation: 'vertical'
@@ -77,6 +99,9 @@ Builder.load_string('''
 class ListDropDownLeft(ILeftBody, MDIconButton):
     pass
 
+class ListDropDownRight(IRightBody, MDDropDownItem):
+    pass
+
 class RoadGANGUI(MDApp):
     title = "RoadGAN"
 
@@ -93,6 +118,7 @@ class RoadGANGUI(MDApp):
         self.day_time = None
         self.style = None
         self.weather_conditions = ['clear', 'fog', 'rain', 'snow', 'clouds']
+        self.urban_style = ['Germany', 'England', 'France', 'Canada', 'China']
 
     def build(self):
         self.theme_cls.primary_palette = "Amber"
@@ -101,23 +127,11 @@ class RoadGANGUI(MDApp):
     def open_settings(self):
         if not self.settings:
             self.settings = Factory.SettingsScenario()
-            # self.settings = ModalView(size_hint=(0.5, 0.5))
-            # self.scenario_selector = MDList()
-            # self.settings.add_widget(self.scenario_selector)
-            # self.weather = OneLineIconListItem(
-            #     text="Weather conditions")
-            # self.weather.add_widget(ListDropDownLeft(icon="weather-cloudy"))
-            # self.weather.add_widget(ListDropDownRigth(items=self.weather_conditions))
-            # self.scenario_selector.add_widget(self.weather)
-            # self.day_time = OneLineIconListItem(text="Time of day")
-            # self.day_time.add_widget(ListDropDownLeft(icon="clock"))
-            # #self.day_time.add_widget(ListDropDownRigth(items=['dawn', 'day', 'twilight', 'night']))
-            # self.scenario_selector.add_widget(self.day_time)
-            # self.style = OneLineIconListItem(text='Urban style')
-            # self.style.add_widget(ListDropDownLeft(icon="city"))
-            # #self.style.add_widget(ListDropDownRigth(items=['Toronto', 'New York', 'London', 'Germany', 'France', 'countryside']))
-            # self.scenario_selector.add_widget(self.style)
         self.settings.open()
+    
+    def close_settings(self):
+        if self.settings:
+            self.settings.dismiss()
     
     def update_weather_condition(self, value):
         self.weather_condition = value
