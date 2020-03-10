@@ -16,6 +16,9 @@ from kivymd.theming import ThemeManager
 from kivymd.toast import toast
 from kivymd import images_path
 
+from few_shot_vid2vid.test import infer_images
+from utils import recompose_video, decompose_video
+import os
 
 Builder.load_string('''
 
@@ -30,6 +33,7 @@ Builder.load_string('''
             ListDropDownLeft:
                 icon: "weather-cloudy"
             ListDropDownRight:
+                id: weather_cond
                 items: app.weather_conditions
         
         OneLineAvatarIconListItem:
@@ -37,6 +41,7 @@ Builder.load_string('''
             ListDropDownLeft:
                 icon: "home-city"
             ListDropDownRight:
+                id: urban_style
                 items: app.urban_style
 
     AnchorLayout:
@@ -89,6 +94,7 @@ Builder.load_string('''
             pos_hint: {'center_x': .5, 'center_y': .3}
             md_bg_color: app.theme_cls.primary_color
             elevation_normal: 11
+            on_release: app.launch_conversion()
                 
 
 
@@ -118,7 +124,7 @@ class RoadGANGUI(MDApp):
         self.day_time = None
         self.style = None
         self.weather_conditions = ['clear', 'fog', 'rain', 'snow', 'clouds']
-        self.urban_style = ['Germany', 'England', 'France', 'Canada', 'China']
+        self.urban_style = ['Berlin', 'England', 'France', 'Canada', 'China']
 
     def build(self):
         self.theme_cls.primary_palette = "Amber"
@@ -166,6 +172,7 @@ class RoadGANGUI(MDApp):
 
         self.exit_manager()
         self.input_path = path
+        self.manager = None
         toast(path)
     
     def select_output_path(self, path):
@@ -177,7 +184,8 @@ class RoadGANGUI(MDApp):
         '''
 
         self.exit_manager()
-        self.input_path = path
+        self.output_path = path
+        self.manager = None
         toast(path)
 
     def exit_manager(self, *args):
@@ -185,6 +193,30 @@ class RoadGANGUI(MDApp):
 
         self.manager.dismiss()
         self.manager_open = False
+    
+    def get_urban_style(self):
+        '''Return urban style chosen by the user'''
+        return self.settings.ids.urban_style.current_item
+    
+    def get_weather_conditions(self):
+        '''return weather conditions chosen by the user'''
+        return self.settings.ids.weather_cond.current_item
+    
+    def launch_conversion(self):
+        '''Called when the user clicks on the floating play button. 
+        Lauches the conversion using vid2vid.'''
+        decompose_video(self.input_path)
+        video_name = self.input_path.split("/")[-1].split(".")[0]
+        print("INPUT", self.input_path)
+        print("OUTPUT", self.output_path)
+        save_path = os.path.join(self.output_path, video_name + "_converted")
+        infer_images(video_name, self.select_style_img(), save_path)
+        recompose_video(save_path, video_name + "_converted.mp4")
+    
+    def select_style_img(self):
+        '''Return the path to the style image corresponding to the scenario chosen
+        by the user.'''
+        return os.path.join("inference/refs_img/images/", f"{self.get_urban_style().lower()}_{self.get_weather_conditions()}.png")
 
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''Called when buttons are pressed on the mobile device..'''
