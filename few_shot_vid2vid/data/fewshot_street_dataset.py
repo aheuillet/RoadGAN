@@ -21,7 +21,7 @@ class FewshotStreetDataset(BaseDataset):
         parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')        
         parser.add_argument('--aspect_ratio', type=float, default=2)         
         parser.set_defaults(resize_or_crop='random_scale_and_crop')
-        parser.set_defaults(niter=20)
+        parser.set_defaults(niter=100)
         parser.set_defaults(niter_single=10)
         parser.set_defaults(niter_step=2)
         parser.set_defaults(save_epoch_freq=1)        
