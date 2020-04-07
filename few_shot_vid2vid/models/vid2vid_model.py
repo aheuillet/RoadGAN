@@ -6,6 +6,7 @@
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import torch
 import numpy as np
+from scipy.specials import logit
 
 import few_shot_vid2vid.models.networks as networks
 from few_shot_vid2vid.models.base_model import BaseModel
@@ -105,7 +106,7 @@ class Vid2VidModel(BaseModel):
         ### Fake Generation
         with torch.no_grad():
             [fake_image, fake_raw_image, _, _, _], [fg_mask, ref_fg_mask], [ref_label, ref_image], _, _ = \
-                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image])
+                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image], tgt_image=tgt_image)
 
         ### temporal losses
         nets = self.netD, self.netDT, self.netDf, self.faceRefiner
@@ -124,18 +125,22 @@ class Vid2VidModel(BaseModel):
 
         loss_list = list(loss_indv) + list(loss_temp)
         loss_list = [loss.view(1, 1) for loss in loss_list]
-        return loss_list              
+        return loss_list               
 
-    def generate_images(self, tgt_labels, ref_labels, ref_images, prevs=[None, None]):
+    def generate_images(self, tgt_labels, ref_labels, ref_images, prevs=[None, None], prev_t=None, tgt_image=None):
         opt = self.opt      
         generated_images, atn_score = [None] * 5, None 
         generated_masks = [None] * 2 if self.has_fg else [1, 1]
         ref_labels_valid = use_valid_labels(opt, ref_labels)
         
         for t in range(opt.n_frames_per_gpu):
-            # get inputs for time t            
-            tgt_label_t, tgt_label_valid, prev_t = self.get_input_t(tgt_labels, prevs, t)
-                                  
+            if prev_t is None:
+                # get inputs for time t            
+                tgt_label_t, tgt_label_valid, prev_t = self.get_input_t(tgt_labels, prevs, t)
+
+                if self.isTrain:
+                    prev_t = self.langevin_dynamics_sampler(1000, prev_t, prevs, tgt_labels, ref_labels, ref_images, tgt_image)
+                                    
             # actual network forward
             fake_image, flow, weight, fake_raw_image, warped_image, mu, logvar, atn_score, ref_idx \
                 = self.netG(tgt_label_valid, ref_labels_valid, ref_images, prev_t)
@@ -155,6 +160,17 @@ class Vid2VidModel(BaseModel):
             prevs = self.concat_prev(prevs, [tgt_label_valid, fake_image])
                 
         return generated_images, generated_masks, [ref_label_valid, ref_image_t], prevs, atn_score
+    
+    def langevin_dynamics_sampler(self, N, z0, prevs, tgt_labels, ref_labels, ref_images, tgt_image, eps=0.01):
+        '''Markov Chain Monte Carlo sampler for enhancing the discriminator's training by providing a better sampling of the latent space.
+        Based on https://arxiv.org/pdf/2003.06060.pdf'''
+        z = np.zeros(N)
+        z[0] = z0
+        for i in range(N):
+            n = np.random.normal()
+            lipschitz_value = self.forward_discriminator(tgt_label, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1])
+            z[i+1] = z[i] - (eps/2)*np.grad(z)*(-np.log(z0)-logit(np.array(loss))) + np.sqrt(eps*n) #Langevin equation to sample the latent space using an EBM
+        return z[N-1]
 
     def get_input_t(self, tgt_labels, prevs, t):
         b, _, _, h, w = tgt_labels.shape        
