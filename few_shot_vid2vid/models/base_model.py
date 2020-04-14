@@ -7,9 +7,9 @@
 import os
 import copy
 import torch
-from few_shot_vid2vid.util.visualizer import Visualizer
-import few_shot_vid2vid.models.networks as networks
-from few_shot_vid2vid.util.distributed import master_only_print as print
+from util.visualizer import Visualizer
+import models.networks as networks
+from util.distributed import master_only_print as print
 
 class BaseModel(torch.nn.Module):
     def name(self):

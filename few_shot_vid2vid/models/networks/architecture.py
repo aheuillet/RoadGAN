@@ -7,10 +7,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from few_shot_vid2vid.models.networks.normalization import SynchronizedBatchNorm2d
+from models.networks.normalization import SynchronizedBatchNorm2d
 
-from few_shot_vid2vid.models.networks.base_network import BaseNetwork, batch_conv
-from few_shot_vid2vid.models.networks.normalization import SPADE
+from models.networks.base_network import BaseNetwork, batch_conv
+from models.networks.normalization import SPADE
 import torch.nn.utils.spectral_norm as sn
 
 def actvn(x):

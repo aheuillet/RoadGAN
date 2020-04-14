@@ -9,9 +9,9 @@ import torch.nn as nn
 import functools
 import numpy as np
 import torch.nn.functional as F
-from few_shot_vid2vid.models.networks.loss import *
-from few_shot_vid2vid.models.networks.discriminator import *
-from few_shot_vid2vid.models.networks.generator import *
+from models.networks.loss import *
+from models.networks.discriminator import *
+from models.networks.generator import *
 
 
 def modify_commandline_options(parser, is_train):

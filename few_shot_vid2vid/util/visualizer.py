@@ -11,8 +11,8 @@ import time
 import glob
 import scipy.misc
 from io import BytesIO
-import few_shot_vid2vid.util.html
-from few_shot_vid2vid.util.distributed import master_only_print as print
+import util.html
+from util.distributed import master_only_print as print
 
 class Visualizer():
     def __init__(self, opt):

@@ -6,13 +6,13 @@
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import importlib
 from .base_dataset import BaseDataset
-from few_shot_vid2vid.util.distributed import master_only_print as print
+from util.distributed import master_only_print as print
 
 def find_dataset_using_name(dataset_name):
     # Given the option --dataset [datasetname],
     # the file "datasets/datasetname_dataset.py"
     # will be imported. 
-    dataset_filename = "few_shot_vid2vid.data." + dataset_name + "_dataset"
+    dataset_filename = "data." + dataset_name + "_dataset"
     datasetlib = importlib.import_module(dataset_filename)
 
     # In the file, the class called DatasetNameDataset() will

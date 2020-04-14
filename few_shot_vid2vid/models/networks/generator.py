@@ -12,9 +12,9 @@ import numpy as np
 import copy
 import pdb
 
-from few_shot_vid2vid.models.networks.base_network import BaseNetwork, batch_conv
-from few_shot_vid2vid.models.networks.normalization import get_nonspade_norm_layer
-from few_shot_vid2vid.models.networks.architecture import SPADEResnetBlock, SPADEConv2d, actvn
+from models.networks.base_network import BaseNetwork, batch_conv
+from models.networks.normalization import get_nonspade_norm_layer
+from models.networks.architecture import SPADEResnetBlock, SPADEConv2d, actvn
 import torch.nn.utils.spectral_norm as sn
 #from models.networks.sn import spectral_norm as sn
 

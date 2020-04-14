@@ -10,13 +10,13 @@ import torch
 import cv2
 from collections import OrderedDict
 
-from few_shot_vid2vid.options.test_options import TestOptions
+from options.test_options import TestOptions
 from .data.data_loader import CreateDataLoader
 from .models.models import create_model
-import few_shot_vid2vid.util.util as util
-from few_shot_vid2vid.util.visualizer import Visualizer
-from few_shot_vid2vid.util import html
-from few_shot_vid2vid.util.util import save_image
+import util.util as util
+from util.visualizer import Visualizer
+from util import html
+from util.util import save_image
 
 def initialize(opt=None):
     if opt is None:

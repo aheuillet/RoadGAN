@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from few_shot_vid2vid.models.networks.vgg import VGG_Activations, Vgg19
+from models.networks.vgg import VGG_Activations, Vgg19
 
 # Defines the GAN loss which uses either LSGAN or the regular GAN.
 # When LSGAN is used, it is basically same as MSELoss,

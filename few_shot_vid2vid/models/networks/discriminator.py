@@ -10,8 +10,8 @@ import functools
 import copy
 import numpy as np
 import torch.nn.functional as F
-from few_shot_vid2vid.models.networks.base_network import BaseNetwork
-from few_shot_vid2vid.models.networks.architecture import actvn as actvn
+from models.networks.base_network import BaseNetwork
+from models.networks.architecture import actvn as actvn
 
 class MultiscaleDiscriminator(BaseNetwork):
     def __init__(self, opt, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, 

@@ -1,6 +1,6 @@
-from few_shot_vid2vid.data.fewshot_street_dataset import FewshotStreetDataset
-from few_shot_vid2vid.data.image_folder import make_grouped_dataset, check_path_valid
-from few_shot_vid2vid.data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
+from data.fewshot_street_dataset import FewshotStreetDataset
+from data.image_folder import make_grouped_dataset, check_path_valid
+from data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
 from PIL import Image
 from os import path
 import os

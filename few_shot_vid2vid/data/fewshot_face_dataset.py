@@ -13,9 +13,9 @@ import cv2
 import numpy as np
 from skimage import feature
 
-from few_shot_vid2vid.data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
-from few_shot_vid2vid.data.image_folder import make_dataset, make_grouped_dataset, check_path_valid
-from few_shot_vid2vid.data.keypoint2img import interpPoints, drawEdge
+from data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
+from data.image_folder import make_dataset, make_grouped_dataset, check_path_valid
+from data.keypoint2img import interpPoints, drawEdge
 
 class FewshotFaceDataset(BaseDataset):
     @staticmethod
