@@ -6,7 +6,7 @@
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import torch
 import numpy as np
-from scipy.specials import logit
+from scipy.special import logit
 
 import models.networks as networks
 from models.base_model import BaseModel
