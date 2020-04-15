@@ -102,11 +102,11 @@ class Vid2VidModel(BaseModel):
                [fake_image, fake_raw_image, warped_image, flow, weight, atn_score], \
                [prev_label, prev_image]   
     
-    def forward_discriminator(self, tgt_label, tgt_image, ref_labels, ref_images, prev_label=None, prev_image=None):
+    def forward_discriminator(self, tgt_label, tgt_image, ref_labels, ref_images, prev_label=None, prev_image=None, prev_t=None):
         ### Fake Generation
         with torch.no_grad():
             [fake_image, fake_raw_image, _, _, _], [fg_mask, ref_fg_mask], [ref_label, ref_image], _, _ = \
-                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image], tgt_image=tgt_image)
+                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image], prev_t, tgt_image=tgt_image)
 
         ### temporal losses
         nets = self.netD, self.netDT, self.netDf, self.faceRefiner
@@ -164,13 +164,13 @@ class Vid2VidModel(BaseModel):
     def langevin_dynamics_sampler(self, N, z0, prevs, tgt_labels, ref_labels, ref_images, tgt_image, eps=0.01):
         '''Markov Chain Monte Carlo sampler for enhancing the discriminator's training by providing a better sampling of the latent space.
         Based on https://arxiv.org/pdf/2003.06060.pdf'''
-        z = np.zeros(N)
-        z[0] = z0
+        z = []
+        z.append(z0)
         for i in range(N):
             n = np.random.normal()
-            lipschitz_value = self.forward_discriminator(tgt_label, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1])
-            z[i+1] = z[i] - (eps/2)*np.grad(z)*(-np.log(z0)-logit(np.array(loss))) + np.sqrt(eps*n) #Langevin equation to sample the latent space using an EBM
-        return z[N-1]
+            lipschitz_value = self.forward_discriminator(tgt_label, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], z[i])
+            z.append(z[i] - (eps/2)*np.grad((-np.log(z0)-logit(np.array(lipschitz_value)))) + np.sqrt(eps*n)) #Langevin equation to sample the latent space using an EBM
+        return z.pop()
 
     def get_input_t(self, tgt_labels, prevs, t):
         b, _, _, h, w = tgt_labels.shape        
