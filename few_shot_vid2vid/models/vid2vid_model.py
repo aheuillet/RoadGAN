@@ -134,9 +134,11 @@ class Vid2VidModel(BaseModel):
         ref_labels_valid = use_valid_labels(opt, ref_labels)
         
         for t in range(opt.n_frames_per_gpu):
+            # get inputs for time t            
+            tgt_label_t, tgt_label_valid, prev_s = self.get_input_t(tgt_labels, prevs, t)
+            
             if prev_t is None:
-                # get inputs for time t            
-                tgt_label_t, tgt_label_valid, prev_t = self.get_input_t(tgt_labels, prevs, t)
+                prev_t = prev_s
 
                 if self.isTrain:
                     prev_t = self.langevin_dynamics_sampler(1000, prev_t, prevs, tgt_labels, ref_labels, ref_images, tgt_image)
