@@ -168,7 +168,7 @@ class Vid2VidModel(BaseModel):
         z.append(z0)
         for i in range(N):
             n = np.random.normal()
-            lipschitz_value = self.forward_discriminator(tgt_label, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z[i])
+            lipschitz_value = self.forward_discriminator(tgt_labels, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z[i])
             z.append(z[i] - (eps/2)*np.grad((-np.log(z0)-logit(np.array(lipschitz_value)))) + np.sqrt(eps*n)) #Langevin equation to sample the latent space using an EBM
         return z.pop()
 
