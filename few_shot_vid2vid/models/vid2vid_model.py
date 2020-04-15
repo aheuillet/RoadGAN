@@ -140,6 +140,8 @@ class Vid2VidModel(BaseModel):
             if prev_t is None:
                 prev_t = prev_s
 
+                print("PREV_T: ", prev_t)
+
                 if self.isTrain and discriminator:
                     prev_t = self.langevin_dynamics_sampler(1000, prev_t, prevs, tgt_labels, ref_labels, ref_images, tgt_image)
                                     
