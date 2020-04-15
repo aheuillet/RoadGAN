@@ -106,7 +106,7 @@ class Vid2VidModel(BaseModel):
         ### Fake Generation
         with torch.no_grad():
             [fake_image, fake_raw_image, _, _, _], [fg_mask, ref_fg_mask], [ref_label, ref_image], _, _ = \
-                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image], prev_t, tgt_image=tgt_image)
+                self.generate_images(tgt_label, ref_labels, ref_images, [prev_label, prev_image], prev_t, tgt_image=tgt_image, discriminator=True)
 
         ### temporal losses
         nets = self.netD, self.netDT, self.netDf, self.faceRefiner
@@ -127,7 +127,7 @@ class Vid2VidModel(BaseModel):
         loss_list = [loss.view(1, 1) for loss in loss_list]
         return loss_list               
 
-    def generate_images(self, tgt_labels, ref_labels, ref_images, prevs=[None, None], prev_t=None, tgt_image=None):
+    def generate_images(self, tgt_labels, ref_labels, ref_images, prevs=[None, None], prev_t=None, tgt_image=None, discriminator=False):
         opt = self.opt      
         generated_images, atn_score = [None] * 5, None 
         generated_masks = [None] * 2 if self.has_fg else [1, 1]
@@ -136,11 +136,11 @@ class Vid2VidModel(BaseModel):
         for t in range(opt.n_frames_per_gpu):
             # get inputs for time t            
             tgt_label_t, tgt_label_valid, prev_s = self.get_input_t(tgt_labels, prevs, t)
-            
+
             if prev_t is None:
                 prev_t = prev_s
 
-                if self.isTrain:
+                if self.isTrain and discriminator:
                     prev_t = self.langevin_dynamics_sampler(1000, prev_t, prevs, tgt_labels, ref_labels, ref_images, tgt_image)
                                     
             # actual network forward
