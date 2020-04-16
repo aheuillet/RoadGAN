@@ -171,7 +171,7 @@ class Vid2VidModel(BaseModel):
         for i in range(N):
             n = np.random.normal()
             lipschitz_value = self.forward_discriminator(tgt_labels, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z[i])
-            lipschitz_value = [loss.numpy() for loss in lipschitz_value] #Convert each torch loss tensor into a numpy array
+            lipschitz_value = [loss.cpu().clone().numpy() for loss in lipschitz_value] #Convert each torch loss tensor into a numpy array
             z.append(z[i] - (eps/2)*np.gradient((-np.log(z0)-logit(np.array(lipschitz_value)))) + np.sqrt(eps*n)) #Langevin equation to sample the latent space using an EBM
         return z.pop()
 
