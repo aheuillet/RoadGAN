@@ -163,18 +163,18 @@ class Vid2VidModel(BaseModel):
                 
         return generated_images, generated_masks, [ref_label_valid, ref_image_t], prevs, atn_score
     
-    def langevin_dynamics_sampler(self, N, z0, prevs, tgt_labels, ref_labels, ref_images, tgt_image, eps=0.01):
+   def langevin_dynamics_sampler(self, N, z0, prevs, tgt_labels, ref_labels, ref_images, tgt_image, eps=0.01):
         '''Markov Chain Monte Carlo sampler for enhancing the discriminator's training by providing a better sampling of the latent space.
         Based on https://arxiv.org/pdf/2003.06060.pdf'''
-        z = []
-        z.append(z0)
+        zs = [e.cpu().numpy() for e in z0]
+        print("type z0: ", type(z0))
         for i in range(N):
             n = np.random.normal()
-            lipschitz_value = self.forward_discriminator(tgt_labels, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z[i])
-            lipschitz_value = [loss.mean().cpu().clone().numpy() for loss in lipschitz_value]
-            print("Lipshitz: ", lipschitz_value, flush=True) #Convert each torch loss tensor into a numpy array
-            z.append(z[i] - (eps/2)*np.gradient((-np.log(z0)-logit(np.array(lipschitz_value)))) + np.sqrt(eps*n)) #Langevin equation to sample the latent space using an EBM
-        return z.pop()
+            lipschitz_value = self.forward_discriminator(tgt_labels, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z0)
+            lipschitz_value = np.mean([loss.mean().cpu().clone().numpy() for loss in lipschitz_value])
+            print("Lipshitz: ", lipschitz_value, flush=True)
+            np.add(zs, -(eps/2)*np.gradient((-np.log(zs)-logit(lipschitz_value))) + np.sqrt(eps*n), out=zs) #Langevin equation to sample the latent space using an EBM
+        return z0
 
     def get_input_t(self, tgt_labels, prevs, t):
         b, _, _, h, w = tgt_labels.shape        
