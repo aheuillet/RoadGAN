@@ -161,6 +161,19 @@ class FewShotGenerator(BaseNetwork):
             self.load_pretrained_net(self.flow_network_ref, self.flow_network_temp)
             if self.spade_combine: self.load_pretrained_net(self.img_ref_embedding, self.img_prev_embedding)
             self.flow_temp_is_initalized = True
+    
+    def langevin_dynamics_sampler(self, N, z0, eps=0.01):
+        '''Markov Chain Monte Carlo sampler for enhancing the discriminator's training by providing a better sampling of the latent space.
+        Based on https://arxiv.org/pdf/2003.06060.pdf'''
+        zs = [e.cpu().numpy() for e in z0]
+        print("type z0: ", type(z0))
+        for i in range(N):
+            n = np.random.normal()
+            lipschitz_value = self.forward_discriminator(tgt_labels, tgt_image, ref_labels, ref_images, prev_label=prevs[0], prev_image=prevs[1], prev_t=z0)
+            lipschitz_value = np.mean([loss.mean().cpu().clone().numpy() for loss in lipschitz_value])
+            print("Lipshitz: ", lipschitz_value, flush=True)
+            np.add(zs, -(eps/2)*np.gradient((-np.log(zs)-logit(lipschitz_value))) + np.sqrt(eps*n), out=zs) #Langevin equation to sample the latent space using an EBM
+        return z0
 
     def forward(self, label, label_refs, img_refs, prev=[None, None], t=0, img_coarse=None):
         ### for face refinement
