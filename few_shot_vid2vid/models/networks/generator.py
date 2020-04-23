@@ -12,6 +12,8 @@ import numpy as np
 import copy
 import pdb
 
+from scipy.special import logit
+
 from models.networks.base_network import BaseNetwork, batch_conv
 from models.networks.normalization import get_nonspade_norm_layer
 from models.networks.architecture import SPADEResnetBlock, SPADEConv2d, actvn
@@ -162,7 +164,7 @@ class FewShotGenerator(BaseNetwork):
             if self.spade_combine: self.load_pretrained_net(self.img_ref_embedding, self.img_prev_embedding)
             self.flow_temp_is_initalized = True
     
-    def langevin_dynamics_sampler(self, N, z0, eps=0.01):
+    def langevin_dynamics_sampler(self, N, z0, discriminator, eps=0.01):
         '''Markov Chain Monte Carlo sampler for enhancing the discriminator's training by providing a better sampling of the latent space.
         Based on https://arxiv.org/pdf/2003.06060.pdf'''
         zs = [e.cpu().numpy() for e in z0]
@@ -174,8 +176,16 @@ class FewShotGenerator(BaseNetwork):
             print("Lipshitz: ", lipschitz_value, flush=True)
             np.add(zs, -(eps/2)*np.gradient((-np.log(zs)-logit(lipschitz_value))) + np.sqrt(eps*n), out=zs) #Langevin equation to sample the latent space using an EBM
         return z0
+    
+    def divide_pred(self, pred):        
+        if type(pred) == list:            
+            fake = [[tensor[:tensor.size(0)//2] for tensor in p] for p in pred]
+            real = [[tensor[tensor.size(0)//2:] for tensor in p] for p in pred]
+            return fake, real
+        else:
+            return torch.chunk(pred, 2, dim=0)     
 
-    def forward(self, label, label_refs, img_refs, prev=[None, None], t=0, img_coarse=None):
+    def forward(self, label, label_refs, img_refs, discriminator, prev=[None, None], t=0, img_coarse=None, N=1000, eps=0.01):
         ### for face refinement
         if img_coarse is not None:
             return self.forward_face(label, label_refs, img_refs, img_coarse)        
@@ -191,35 +201,44 @@ class FewShotGenerator(BaseNetwork):
         flow, weight, img_warp, ds_ref = self.flow_generation(label, label_ref, img_ref, label_prev, img_prev, has_prev)
 
         weight_ref, weight_prev = weight
-        img_ref_warp, img_prev_warp = img_warp        
-        encoded_label = self.SPADE_combine(encoded_label, ds_ref)        
-        
-        ### main branch convolution layers
-        for i in range(self.n_downsample_G, -1, -1):            
-            conv_weight = conv_weights[i] if (self.adap_conv and i < self.n_adaptive_layers) else None
-            norm_weight = norm_weights[i] if (self.adap_spade and i < self.n_adaptive_layers) else None                  
-            x = getattr(self, 'up_'+str(i))(x, encoded_label[i], conv_weights=conv_weight, norm_weights=norm_weight)            
-            if i != 0: x = self.up(x)
+        img_ref_warp, img_prev_warp = img_warp
 
-        ### raw synthesized image
-        x = self.conv_img(actvn(x))
-        img_raw = torch.tanh(x)        
+        encoded_label = self.SPADE_combine(encoded_label, ds_ref)  
+        encoded_label_prime = encoded_label
 
-        ### combine with reference / previous images
-        if not self.spade_combine:
-            ### combine raw result with reference image
-            if self.warp_ref:
-                img_final = img_raw * weight_ref + img_ref_warp * (1 - weight_ref)        
+        for i in range(N):      
+            
+            ### main branch convolution layers
+            for i in range(self.n_downsample_G, -1, -1):            
+                conv_weight = conv_weights[i] if (self.adap_conv and i < self.n_adaptive_layers) else None
+                norm_weight = norm_weights[i] if (self.adap_spade and i < self.n_adaptive_layers) else None                  
+                x = getattr(self, 'up_'+str(i))(x, encoded_label[i], conv_weights=conv_weight, norm_weights=norm_weight)            
+                if i != 0: x = self.up(x)
+
+            ### raw synthesized image
+            x = self.conv_img(actvn(x))
+            img_raw = torch.tanh(x)        
+
+            ### combine with reference / previous images
+            if not self.spade_combine:
+                ### combine raw result with reference image
+                if self.warp_ref:
+                    img_final = img_raw * weight_ref + img_ref_warp * (1 - weight_ref)        
+                else:
+                    img_final = img_raw
+                    if not self.warp_prev: img_raw = None
+
+                ### combine generated frame with previous frame
+                if self.warp_prev and has_prev:
+                    img_final = img_final * weight_prev + img_prev_warp * (1 - weight_prev)        
             else:
                 img_final = img_raw
-                if not self.warp_prev: img_raw = None
+                img_raw = None
 
-            ### combine generated frame with previous frame
-            if self.warp_prev and has_prev:
-                img_final = img_final * weight_prev + img_prev_warp * (1 - weight_prev)        
-        else:
-            img_final = img_raw
-            img_raw = None
+            n = np.random.normal()
+            lipschitz_value = discriminator(img_final, img_ref)
+            print("Lipshitz: ", lipschitz_value, flush=True)
+            #np.add(encoded_label, -(eps/2)*np.gradient((-np.log(encoded_label_prime)-logit(lipschitz_value))) + np.sqrt(eps*n), out=encoded_label) #Langevin equation to sample the latent space using an EBM
                 
         return img_final, flow, weight, img_raw, img_warp, mu, logvar, atn, ref_idx
 

@@ -133,7 +133,7 @@ class Vid2VidModel(BaseModel):
                                   
             # actual network forward
             fake_image, flow, weight, fake_raw_image, warped_image, mu, logvar, atn_score, ref_idx \
-                = self.netG(tgt_label_valid, ref_labels_valid, ref_images, prev_t)
+                = self.netG(tgt_label_valid, ref_labels_valid, ref_images, prev_t, discriminator=self.netD)
             
             ref_label_valid, ref_label_t, ref_image_t = self.netG.pick_ref([ref_labels_valid, ref_labels, ref_images], ref_idx)
             # refine face if necessary            
