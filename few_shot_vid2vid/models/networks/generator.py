@@ -168,7 +168,7 @@ class FewShotGenerator(BaseNetwork):
             if self.sep_prev_embedding: self.load_pretrained_net(self.img_ref_embedding, self.img_prev_embedding)
             self.flow_temp_is_initalized = True
 
-    def forward(self, label, label_refs, img_refs, discriminator, prev=[None, None], t=0, img_coarse=None, N=1000, eps=0.01):
+    def forward(self, label, label_refs, img_refs, prev=[None, None], t=0, img_coarse=None, N=1000, eps=0.01, discriminator=None):
         ### for face refinement
         if img_coarse is not None:
             return self.forward_face(label, label_refs, img_refs, img_coarse)        
