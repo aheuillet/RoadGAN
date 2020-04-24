@@ -5,7 +5,7 @@
 # To view a copy of this license, visit
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import importlib
-from .base_dataset import BaseDataset
+from data.base_dataset import BaseDataset
 from util.distributed import master_only_print as print
 
 def find_dataset_using_name(dataset_name):

@@ -7,7 +7,7 @@
 import torch.utils.data
 import torch.distributed as dist
 from data.base_data_loader import BaseDataLoader
-import data as data
+import data
 
 class CustomDatasetDataLoader(BaseDataLoader):
     def name(self):

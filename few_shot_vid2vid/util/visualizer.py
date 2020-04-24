@@ -10,9 +10,9 @@ import ntpath
 import time
 import glob
 import scipy.misc
-from io import BytesIO
-import util.html
-from util.util import mkdirs
+from io import BytesIO, StringIO
+from util import util
+from util import html
 from util.distributed import master_only_print as print
 
 class Visualizer():
@@ -38,7 +38,7 @@ class Visualizer():
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
             self.img_dir = os.path.join(self.web_dir, 'images')
             print('create web directory %s...' % self.web_dir)
-            mkdirs([self.web_dir, self.img_dir])
+            util.mkdirs([self.web_dir, self.img_dir])
         if opt.isTrain:
             if hasattr(opt, 'model_idx') and opt.model_idx != -1:
                 self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log_%03d.txt' % opt.model_idx)
