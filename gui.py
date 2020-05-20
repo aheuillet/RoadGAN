@@ -16,9 +16,11 @@ from kivymd.theming import ThemeManager
 from kivymd.toast import toast
 from kivymd import images_path
 
-from few_shot_vid2vid.test import infer_images
+import few_shot_vid2vid
+#from few_shot_vid2vid.test import infer_images
 from utils import recompose_video, decompose_video
 import os
+import sys
 
 Builder.load_string('''
 
@@ -151,16 +153,17 @@ class RoadGANGUI(MDApp):
     def file_manager_open(self, output=False):
         if output:
             func = self.select_output_path
+            path = self.output_path
         else:
             func = self.select_input_path
-        if not self.manager:
-            self.manager = ModalView(size_hint=(1, 1), auto_dismiss=False)
-            self.file_manager = MDFileManager(
+            path = self.input_path
+        print(self.manager_open)
+        if not self.manager_open:
+            self.manager = MDFileManager(
                 exit_manager=self.exit_manager, select_path=func)
-            self.manager.add_widget(self.file_manager)
-            self.file_manager.show('/')  # output manager to the screen
-        self.manager_open = True
-        self.manager.open()
+            #self.manager.add_widget(self.file_manager)
+            self.manager.show(os.path.dirname(path) if path else '/')  # output manager to the screen
+            self.manager_open = True
 
     def select_input_path(self, path):
         '''It will be called when you click on the file name
@@ -172,7 +175,6 @@ class RoadGANGUI(MDApp):
 
         self.exit_manager()
         self.input_path = path
-        self.manager = None
         toast(path)
     
     def select_output_path(self, path):
@@ -185,13 +187,12 @@ class RoadGANGUI(MDApp):
 
         self.exit_manager()
         self.output_path = path
-        self.manager = None
         toast(path)
 
     def exit_manager(self, *args):
         '''Called when the user reaches the root of the directory tree.'''
 
-        self.manager.dismiss()
+        self.manager.close()
         self.manager_open = False
     
     def get_urban_style(self):
@@ -199,18 +200,18 @@ class RoadGANGUI(MDApp):
         return self.settings.ids.urban_style.current_item
     
     def get_weather_conditions(self):
-        '''return weather conditions chosen by the user'''
+        '''Return weather conditions chosen by the user'''
         return self.settings.ids.weather_cond.current_item
     
     def launch_conversion(self):
         '''Called when the user clicks on the floating play button. 
         Lauches the conversion using vid2vid.'''
         decompose_video(self.input_path)
-        video_name = self.input_path.split("/")[-1].split(".")[0]
+        video_name = os.path.basename(self.input_path).split(".")[0]
         print("INPUT", self.input_path)
         print("OUTPUT", self.output_path)
         save_path = os.path.join(self.output_path, video_name + "_converted")
-        infer_images(video_name, self.select_style_img(), save_path)
+        #test.infer_images(video_name, self.select_style_img(), save_path)
         recompose_video(save_path, video_name + "_converted.mp4")
     
     def select_style_img(self):
@@ -223,8 +224,7 @@ class RoadGANGUI(MDApp):
 
         if keyboard in (1001, 27):
             if self.manager_open:
-                self.file_manager.back()
+                self.manager.back()
         return True
-
 
 RoadGANGUI().run()

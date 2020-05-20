@@ -18,7 +18,7 @@ def decompose_video(video_path):
     print("Reading video file...")
     with tqdm() as pbar:
         while success:
-            cv2.imwrite(vid_name + "/%d.png" %
+            cv2.imwrite("/%d.png" %
                         count, image)     # save frame as JPEG file
             success, image = vidcap.read()
             count += 1
@@ -29,14 +29,14 @@ def recompose_video(img_dir_path, save_path):
     sample_path = random.choice(os.listdir(img_dir_path))
     sample = np.array(cv2.imread(os.path.join(img_dir_path, sample_path)))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(save_path, fourcc, 25,
+    writer = cv2.VideoWriter(os.path.join(save_path, '../video.mp4'), fourcc, 25,
                              (sample.shape[1], sample.shape[0]))
-    for root, dirs, files in os.walk(img_dir_path):
-        with tqdm(total=len(files)) as pbar:
-            files.sort(key=lambda x: int(x.split(".")[0].split("-")[1]))
-            for f in files:
-                if f.split(".")[1] in ["png", "jpg", "jpeg", "PNG", "JPEG"]:
-                    img = cv2.imread(os.path.join(img_dir_path, f))
-                    writer.write(img)
-                    pbar.update()
+    for f in tqdm(sorted(os.listdir(img_dir_path), key=lambda x: int(x.split(".")[0]))):
+            #files.sort(key=lambda x: int(x.split(".")[0]))
+        if f.split(".")[1] in ["png", "jpg", "jpeg", "PNG", "JPEG"]:
+            img = cv2.imread(os.path.join(img_dir_path, f))
+            writer.write(img)
     writer.release()
+
+
+recompose_video('/home/alexandre/Documents/attribute_hallucination/editing_tool/Video_test/', '/home/alexandre/Documents/attribute_hallucination/editing_tool/Video_test/')
