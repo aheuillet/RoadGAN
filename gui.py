@@ -6,17 +6,19 @@ from kivy.uix.modalview import ModalView
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.metrics import dp
+from kivy.utils import get_color_from_hex
 
 from kivymd.uix.filemanager import MDFileManager
-from kivymd.uix.list import MDList, OneLineAvatarIconListItem, ILeftBody, IRightBody
+from kivymd.uix.list import MDList, OneLineAvatarIconListItem, ILeftBodyTouch, IRightBodyTouch
 from kivymd.uix.dropdownitem import MDDropDownItem
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDIconButton, MDRaisedButton
 from kivymd.uix.dialog import BaseDialog
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
 from kivymd import images_path
+from kivymd.uix.bottomsheet import MDCustomBottomSheet
 
-import few_shot_vid2vid
 #from few_shot_vid2vid.test import infer_images
 from utils import recompose_video, decompose_video
 import os
@@ -24,35 +26,58 @@ import sys
 
 Builder.load_string('''
 
-<SettingsScenario@BaseDialog>
-    size_hint: 0.6, 0.6
-    background: f"{images_path}ios_bg_mod.png"
-    auto_dismiss: False
+#:import utils kivy.utils
 
-    MDList:
-        OneLineAvatarIconListItem:
-            text: "Weather conditions"
-            ListDropDownLeft:
-                icon: "weather-cloudy"
-            ListDropDownRight:
-                id: weather_cond
-                items: app.weather_conditions
+<SettingsScenario@BoxLayout>
+    orientation: "vertical"
+    size_hint_y: None
+    height: "400dp"
+
+    MDToolbar:
+        title: 'Settings'
+    
+    ScrollView:
+
+        MDList:
+            OneLineAvatarIconListItem:
+                text: "Weather conditions"
+                ListDropDownLeft:
+                    icon: "weather-cloudy"
+                ListDropDownRight:
+                    id: weather_cond
+                    text: "clear"
+                    on_release: app.weather_menu.open()
+            
+            OneLineAvatarIconListItem:
+                text: "Urban style"
+                ListDropDownLeft:
+                    icon: "home-city"
+                ListDropDownRight:
+                    id: urban_style
+                    text: "Berlin"
+                    on_release: app.urban_style_menu.open()
+            
+            OneLineAvatarIconListItem:
+                text: "Day time"
+                ListDropDownLeft:
+                    icon: "clock"
+                ListDropDownRight:
+                    id: day_time
+                    text: "Day"
+                    on_release: app.day_time_menu.open()
+            
+            OneLineIconListItem:
+                text: "Exit"
+                bg_color: utils.get_color_from_hex('#F44336')
+                text_color: utils.get_color_from_hex('#FFFFFF')
+                theme_text_color: 'Custom'
+                on_release: app.close_settings()
+                ListDropDownLeft:
+                    text_color: utils.get_color_from_hex('#FFFFFF')
+                    theme_text_color: 'Custom' 
+                    icon: "exit-to-app"
         
-        OneLineAvatarIconListItem:
-            text: "Urban style"
-            ListDropDownLeft:
-                icon: "home-city"
-            ListDropDownRight:
-                id: urban_style
-                items: app.urban_style
-
-    AnchorLayout:
-        anchor_x: "center"
-        anchor_y: "bottom"
-        height: dp(30)
-        MDRaisedButton:
-            text: "OK"
-            on_press: app.close_settings()
+        
 
 
 <ExampleFileManager@BoxLayout>
@@ -104,10 +129,10 @@ Builder.load_string('''
 ''')
 
 
-class ListDropDownLeft(ILeftBody, MDIconButton):
+class ListDropDownLeft(ILeftBodyTouch, MDIconButton):
     pass
 
-class ListDropDownRight(IRightBody, MDDropDownItem):
+class ListDropDownRight(IRightBodyTouch, MDDropDownItem):
     pass
 
 class RoadGANGUI(MDApp):
@@ -118,37 +143,63 @@ class RoadGANGUI(MDApp):
         Window.bind(on_keyboard=self.events)
         self.manager_open = False
         self.manager = None
-        self.settings = None
         self.settings_open = False
         self.input_path = None
-        self.output_path = None
-        self.weather = None
-        self.day_time = None
-        self.style = None
-        self.weather_conditions = ['clear', 'fog', 'rain', 'snow', 'clouds']
-        self.urban_style = ['Berlin', 'England', 'France', 'Canada', 'China']
+        self.output_path = './'
+        self.weather = "clear"
+        self.day_time = "daylight"
+        self.urban_style = "Berlin"
+        self.weather_conditions = [{"icon": "weather-sunny", "text": "clear"}, {"icon": 'weather-fog', "text": "fog"}, {"icon": "weather-pouring", "text": 'rain'}, {"icon": "weather-snowy", "text": 'snow'}, {"icon": "weather-cloudy", "text": 'clouds'}]
+        self.urban_styles = [{"icon": "home-city", "text": 'Berlin'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Canada'}, {"icon": "home-city", "text": 'China'}]
+        self.day_times = [{"icon": "weather-sunset-up", "text":'dawn'}, {"icon": "weather-sunny", "text": 'daylight'}, {"icon": "weather-sunset", "text": 'dusk'}, {"icon": "weather-night", "text": 'night'}]
 
     def build(self):
         self.theme_cls.primary_palette = "Amber"
         return Factory.ExampleFileManager()
 
     def open_settings(self):
-        if not self.settings:
-            self.settings = Factory.SettingsScenario()
+        self.settings = MDCustomBottomSheet(screen=Factory.SettingsScenario()) 
+        self.weather_menu = MDDropdownMenu(
+            caller=self.settings.screen.ids.weather_cond,
+            items=self.weather_conditions,
+            position="auto",
+            callback=self.update_weather_condition,
+            width_mult=3,
+        )
+        self.urban_style_menu = MDDropdownMenu(
+            caller=self.settings.screen.ids.urban_style,
+            items=self.urban_styles,
+            position="auto",
+            callback=self.update_urban_style,
+            width_mult=3,
+        )
+        self.day_time_menu = MDDropdownMenu(
+            caller=self.settings.screen.ids.day_time,
+            items=self.day_times,
+            position="auto",
+            callback=self.update_day_time,
+            width_mult=3,
+        )
+        self.settings.screen.ids.weather_cond.set_item(self.weather)
+        self.settings.screen.ids.day_time.set_item(self.day_time)
+        self.settings.screen.ids.urban_style.set_item(self.urban_style) 
         self.settings.open()
     
     def close_settings(self):
         if self.settings:
             self.settings.dismiss()
     
-    def update_weather_condition(self, value):
-        self.weather_condition = value
+    def update_weather_condition(self, instance):
+        self.weather = instance.text
+        self.settings.screen.ids.weather_cond.set_item(self.weather)
     
-    def update_day_time(self, value):
-        self.time_of_day = value
-    
-    def update_city_style(self, value):
-        self.city_style = value
+    def update_day_time(self, instance):
+        self.day_time = instance.text
+        self.settings.screen.ids.day_time.set_item(self.day_time)
+        
+    def update_urban_style(self, instance):
+        self.urban_style = instance.text
+        self.settings.screen.ids.urban_style.set_item(self.urban_style) 
 
     def file_manager_open(self, output=False):
         if output:
@@ -195,24 +246,21 @@ class RoadGANGUI(MDApp):
         self.manager.close()
         self.manager_open = False
     
-    def get_urban_style(self):
-        '''Return urban style chosen by the user'''
-        return self.settings.ids.urban_style.current_item
-    
-    def get_weather_conditions(self):
-        '''Return weather conditions chosen by the user'''
-        return self.settings.ids.weather_cond.current_item
-    
     def launch_conversion(self):
         '''Called when the user clicks on the floating play button. 
         Lauches the conversion using vid2vid.'''
-        decompose_video(self.input_path)
-        video_name = os.path.basename(self.input_path).split(".")[0]
+        self.input_path = '/home/alexandre/Documents/RoadGAN/inference/video.mp4'
+        #video_name = decompose_video(self.input_path)
         print("INPUT", self.input_path)
         print("OUTPUT", self.output_path)
-        save_path = os.path.join(self.output_path, video_name + "_converted")
-        #test.infer_images(video_name, self.select_style_img(), save_path)
-        recompose_video(save_path, video_name + "_converted.mp4")
+        #save_path = os.path.join(self.output_path, video_name + "_converted")
+        #infer_images(video_name, self.select_style_img(), save_path)
+        save_path = '/home/alexandre/Documents/RoadGAN/inference/seq_1'
+        os.chdir('attribute_hallucination/')
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes " + self.weather + "," + self.day_time)
+        os.system("python style_transfer.py --video_path" + save_path)
+        os.chdir('..')
+        recompose_video('attribute_hallucination/' + video_name + "_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
     
     def select_style_img(self):
         '''Return the path to the style image corresponding to the scenario chosen

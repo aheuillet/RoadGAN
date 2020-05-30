@@ -327,7 +327,7 @@ if __name__ == "__main__":
                         help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 
     parser.add_argument('--manualSeed', type=int, help='manual seed')
-    parser.add_argument('--model_path', default='./pretrained_models/sgn_enhancer_G_latest', help="pretrained model path")
+    parser.add_argument('--model_path', default='./pretrained_models/sgn_enhancer_G_latest.pth', help="pretrained model path")
     parser.add_argument('--image_size', type=int, default=256)
     parser.add_argument('--isTest', action='store_true', help='test')
     parser.add_argument('--video_path', default='./video')
