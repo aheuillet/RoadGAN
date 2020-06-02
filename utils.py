@@ -30,7 +30,7 @@ def recompose_video(img_dir_path, save_path):
     sample_path = random.choice(os.listdir(img_dir_path))
     sample = np.array(cv2.imread(os.path.join(img_dir_path, sample_path)))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(os.path.join(save_path, '../video.mp4'), fourcc, 25,
+    writer = cv2.VideoWriter(os.path.join(save_path, 'video.mp4'), fourcc, 30,
                              (sample.shape[1], sample.shape[0]))
     for f in tqdm(sorted(os.listdir(img_dir_path), key=lambda x: int(x.split(".")[0]))):
             #files.sort(key=lambda x: int(x.split(".")[0]))
@@ -40,4 +40,4 @@ def recompose_video(img_dir_path, save_path):
     writer.release()
 
 
-decompose_video('/home/alexandre/Documents/RoadGAN/inference/seq_1/video.mp4')
+recompose_video('/home/alexandre/Documents/RoadGAN/few_shot_vid2vid/toronto_label/01', '/home/alexandre/Documents/RoadGAN/few_shot_vid2vid/')

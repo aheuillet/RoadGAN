@@ -2,8 +2,9 @@
             adaptive_conv: False                         
            adaptive_spade: True                          	[default: False]
                add_face_D: False                         
+             add_raw_loss: False                         
              aspect_ratio: 2                             
-                batchSize: 6                             	[default: 1]
+                batchSize: 46                            	[default: 1]
       batch_for_first_gpu: -1                            
                     beta1: 0.5                           
                     beta2: 0.999                         
@@ -17,14 +18,13 @@
           display_winsize: 256                           
               distributed: False                         
                  embed_ks: 1                             
-                 fineSize: 256                           
+                 fineSize: 512                           	[default: 256]
                  finetune: False                         
-             finetune_all: False                         
               flow_deconv: False                         
           flow_multiplier: 20                            
                      fp16: False                         
                  gan_mode: hinge                         
-                  gpu_ids: 0                             
+                  gpu_ids: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15	[default: 0]
                 init_type: xavier                        
             init_variance: 0.02                          
                  input_nc: 3                             
@@ -39,14 +39,14 @@
               lambda_temp: 2.0                           
                lambda_vgg: 10.0                          
             lambda_weight: 10.0                          
-                 loadSize: 256                           
+                 loadSize: 512                           	[default: 256]
             load_pretrain:                               
                local_rank: 0                             
                        lr: 0.0004                        
          max_dataset_size: 9223372036854775807           
                max_t_step: 4                             
                     model: vid2vid                       
-                 nThreads: 2                             
+                 nThreads: 16                            	[default: 2]
         n_adaptive_layers: 4                             
                n_blocks_F: 6                             
            n_downsample_A: 2                             
@@ -68,7 +68,7 @@
                       nff: 32                            
                       ngf: 32                            
                     niter: 20                            
-              niter_decay: 0                             
+              niter_decay: 50                            
              niter_single: 10                            
                niter_step: 2                             
                   no_TTUR: False                         
@@ -88,14 +88,16 @@
                   print_D: False                         
                   print_G: False                         
                print_freq: 100                           
-                print_mem: True                          	[default: False]
+                print_mem: False                         
                ref_img_id: 0                             
              ref_img_path: datasets/street/test_images/02/
               res_for_ref: False                         
            resize_or_crop: random_scale_and_crop         
           save_epoch_freq: 1                             
          save_latest_freq: 1000                          
-                  sc_arch: encoder                       
+                  sc_arch: unet                          
+            sep_flow_prev: False                         
+           sep_warp_embed: False                         
                  seq_path: datasets/street/test_images/01/
            serial_batches: False                         
             spade_combine: False                         

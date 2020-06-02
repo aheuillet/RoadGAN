@@ -14,7 +14,8 @@ def encode_input(opt, data_list, dummy_bs):
 
     # target label and image
     tgt_label = encode_label(opt, tgt_label)
-    tgt_image = tgt_image.cuda()            
+    if opt.isTrain:
+        tgt_image = tgt_image.cuda()            
              
     # reference label and image
     ref_label = encode_label(opt, ref_label)        

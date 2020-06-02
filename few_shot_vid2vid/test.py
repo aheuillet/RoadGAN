@@ -11,8 +11,8 @@ import cv2
 from collections import OrderedDict
 
 from options.test_options import TestOptions
-from .data.data_loader import CreateDataLoader
-from .models.models import create_model
+from data.data_loader import CreateDataLoader
+from models.models import create_model
 import util.util as util
 from util.visualizer import Visualizer
 from util import html
@@ -78,22 +78,28 @@ def infer_images(seg_img_dataroot, target_img_path, save_path):
     target_img_name = target_img_path.split("/")[-1]
     opt.name = "street"
     opt.dataset_mode = "fewshot_street_prod"
-    opt.checkpoints_dir = "./few_shot_vid2vid/checkpoints/"
+    opt.checkpoints_dir = "./checkpoints/"
     opt.dataroot = seg_img_dataroot
     opt.adaptive_spade = True
     opt.loadSize = 512
     opt.fineSize = 512
     opt.seq_path = seg_img_dataroot
     opt.ref_img_path = target_img_path.replace(target_img_name, "")
+    opt.label_nc = 20
+    opt.input_nc = 3
+    opt.aspect_ratio = 2
+    opt.resize_or_crop = 'scale_width_and_crop'
     opt, model, _, dataset = initialize(opt)
+
+    os.makedirs(save_path, exist_ok=True)
 
     for i, data in enumerate(dataset):
             data_list = [data['tgt_label'], None, None,
-                    None, data['ref_label'], data['ref_image'], None, None]
+                    None, data['ref_label'], data['ref_image'], None, None, None]
             synthesized_image, _, _, _, _, _ = model(data_list)
             synthesized_image = util.tensor2im(synthesized_image)
             save_image(synthesized_image, os.path.join(save_path, str(i) + '.png'))
             
 
 if __name__ == "__main__":
-    evaluate_many()
+    infer_images('./toronto_label/01/', './ref_images/MU_clear/i.jpg', './synthetized/')

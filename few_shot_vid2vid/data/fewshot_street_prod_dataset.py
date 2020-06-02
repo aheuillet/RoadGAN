@@ -6,10 +6,27 @@ from os import path
 import os
 
 class FewShotStreetProdDataset(FewshotStreetDataset):
+    @staticmethod
+    def modify_commandline_options(parser, is_train):
+        parser.set_defaults(dataroot='datasets/street/')
+        parser.add_argument('--label_nc', type=int, default=20, help='# of input label channels')      
+        parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')        
+        parser.add_argument('--aspect_ratio', type=float, default=2)         
+        parser.set_defaults(resize_or_crop='random_scale_and_crop')
+        parser.set_defaults(niter=100)
+        parser.set_defaults(niter_single=10)
+        parser.set_defaults(niter_step=2)
+        parser.set_defaults(save_epoch_freq=1)        
+
+        ### for inference        
+        parser.add_argument('--seq_path', type=str, default='datasets/street/test_images/01/', help='path to the driving sequence')        
+        parser.add_argument('--ref_img_path', type=str, default='datasets/street/test_images/02/', help='path to the reference image')
+        parser.add_argument('--ref_img_id', type=str, default='0', help='indices of reference frames')
+        return parser
 
     def initialize(self, opt):
         self.opt = opt     
-        self.L_is_label = True#self.opt.label_nc != 0 
+        self.L_is_label = self.opt.label_nc != 0 
           
         self.L_paths = sorted(self.make_dataset(opt.seq_path))
         self.ref_I_paths = sorted(self.make_dataset(opt.ref_img_path))
@@ -44,14 +61,13 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
 
 
         ### read in target images
-        L, I = self.L, self.I
+        L = self.L
         for t in range(n_frames_total):
             idx = start_idx + t * t_step            
             Lt = self.get_image(L_paths[idx], transform_L, is_label=self.L_is_label)
             L = self.concat_frame(L, Lt.unsqueeze(0))
             
-        if not opt.isTrain:
-            self.L, self.I = L, I
+        self.L = L
         
         seq = path.basename(path.dirname(opt.ref_img_path)) + '-' + opt.ref_img_id + '_' + path.basename(path.dirname(opt.seq_path))
         

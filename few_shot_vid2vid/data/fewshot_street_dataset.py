@@ -35,7 +35,7 @@ class FewshotStreetDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
         root = opt.dataroot       
-        self.L_is_label = self.opt.label_nc != 0 
+        self.L_is_label = self.opt.label_nc != 0
 
         if opt.isTrain:
             self.L_paths = sorted(make_grouped_dataset(path.join(root, 'train_labels'))) 
@@ -109,16 +109,7 @@ class FewshotStreetDataset(BaseDataset):
         return A_scaled
 
     def get_label_tensor(self, label_path, transform_label):
-        label = self.read_data(label_path).convert('L')
-        
-        train2eval = self.opt.label_nc == 20
-        if train2eval:            
-            ### 35 to 20            
-            A_label_np = np.array(label)
-            label_mapping = np.array([19, 19, 19, 19, 19, 19, 19, 0, 1, 19, 19, 2, 3, 4, 19, 19, 19, 5, 19, 
-                                      6, 7, 8, 9, 18, 10, 11, 12, 13, 14, 19, 19, 15, 16, 17, 19], dtype=np.uint8)            
-            A_label_np = label_mapping[A_label_np]
-            label = Image.fromarray(A_label_np)
+        label = self.read_data(label_path)
 
         label_tensor = transform_label(label) * 255.0 
         return label_tensor

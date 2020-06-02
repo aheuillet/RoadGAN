@@ -5,29 +5,32 @@ from torch.nn import init
 import math
 import numpy as np
 
-from .networks.resample2d_package.resample2d import Resample2d
-from .networks.channelnorm_package.channelnorm import ChannelNorm
+try:
+    from networks.resample2d_package.resample2d import Resample2d
+    from networks.channelnorm_package.channelnorm import ChannelNorm
 
-from .networks import FlowNetC
-from .networks import FlowNetS
-from .networks import FlowNetSD
-from .networks import FlowNetFusion
+    from networks import FlowNetC
+    from networks import FlowNetS
+    from networks import FlowNetSD
+    from networks import FlowNetFusion
 
-from .networks.submodules import *
+    from networks.submodules import *
+except:
+    from .networks.resample2d_package.resample2d import Resample2d
+    from .networks.channelnorm_package.channelnorm import ChannelNorm
+
+    from .networks import FlowNetC
+    from .networks import FlowNetS
+    from .networks import FlowNetSD
+    from .networks import FlowNetFusion
+
+    from .networks.submodules import *
 'Parameter count = 162,518,834'
-
-class MyDict(dict):
-    pass
 
 class FlowNet2(nn.Module):
 
-    def __init__(self, args=None, batchNorm=False, div_flow = 20.):
+    def __init__(self, args, batchNorm=False, div_flow = 20.):
         super(FlowNet2,self).__init__()
-        if args is None:
-            args = MyDict()
-            args.rgb_max = 1
-            args.fp16 = False
-            args.grads = {}
         self.batchNorm = batchNorm
         self.div_flow = div_flow
         self.rgb_max = args.rgb_max
