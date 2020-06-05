@@ -5,10 +5,10 @@
 # To view a copy of this license, visit
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import torch
-from util.image_pool import ImagePool
-from models.base_model import BaseModel
-import models.networks as networks
-from models.input_process import *
+from few_shot_vid2vid.util.image_pool import ImagePool
+from few_shot_vid2vid.models.base_model import BaseModel
+import few_shot_vid2vid.models.networks as networks
+from few_shot_vid2vid.models.input_process import *
 
 class LossCollector(BaseModel):
     def name(self):

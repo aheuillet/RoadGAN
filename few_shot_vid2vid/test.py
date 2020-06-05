@@ -10,13 +10,13 @@ import torch
 import cv2
 from collections import OrderedDict
 
-from options.test_options import TestOptions
-from data.data_loader import CreateDataLoader
-from models.models import create_model
-import util.util as util
-from util.visualizer import Visualizer
-from util import html
-from util.util import save_image
+from few_shot_vid2vid.options.test_options import TestOptions
+from few_shot_vid2vid.data.data_loader import CreateDataLoader
+from few_shot_vid2vid.models.models import create_model
+import few_shot_vid2vid.util.util as util
+from few_shot_vid2vid.util.visualizer import Visualizer
+from few_shot_vid2vid.util import html
+from few_shot_vid2vid.util.util import save_image
 
 def initialize(opt=None):
     if opt is None:
@@ -78,7 +78,7 @@ def infer_images(seg_img_dataroot, target_img_path, save_path):
     target_img_name = target_img_path.split("/")[-1]
     opt.name = "street"
     opt.dataset_mode = "fewshot_street_prod"
-    opt.checkpoints_dir = "./checkpoints/"
+    opt.checkpoints_dir = "./few_shot_vid2vid/checkpoints/"
     opt.dataroot = seg_img_dataroot
     opt.adaptive_spade = True
     opt.loadSize = 512

@@ -11,10 +11,10 @@ import torch
 from PIL import Image
 import numpy as np
 
-from data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
-from data.image_folder import make_dataset, make_grouped_dataset, check_path_valid
-from data.keypoint2img import read_keypoints
-from util.distributed import master_only_print as print
+from few_shot_vid2vid.data.base_dataset import BaseDataset, get_img_params, get_video_params, get_transform
+from few_shot_vid2vid.data.image_folder import make_dataset, make_grouped_dataset, check_path_valid
+from few_shot_vid2vid.data.keypoint2img import read_keypoints
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 class FewshotPoseDataset(BaseDataset):
     @staticmethod

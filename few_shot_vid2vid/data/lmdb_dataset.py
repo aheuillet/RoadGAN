@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 import cv2
 import torch.utils.data as data
-from util.distributed import master_only_print as print
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 class LMDBDataset(data.Dataset):
     def __init__(self, root, write_cache=False):

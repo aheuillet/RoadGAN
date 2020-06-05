@@ -10,9 +10,9 @@ import argparse
 import pickle
 import torch
 
-import data
-from util import util
-from util.distributed import master_only_print as print
+import few_shot_vid2vid.data as data
+from few_shot_vid2vid.util import util
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 class BaseOptions():
     def __init__(self):

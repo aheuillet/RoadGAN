@@ -10,8 +10,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.spectral_norm as sn
 
-from models.networks.base_network import batch_conv
-from models.networks.sync_batchnorm import SynchronizedBatchNorm2d
+from few_shot_vid2vid.models.networks.base_network import batch_conv
+from few_shot_vid2vid.models.networks.sync_batchnorm import SynchronizedBatchNorm2d
 
 class SPADE(nn.Module):
     def __init__(self, norm_nc, hidden_nc=0, norm='batch', ks=3, params_free=False):

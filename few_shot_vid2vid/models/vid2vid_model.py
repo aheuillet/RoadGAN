@@ -7,12 +7,12 @@
 import torch
 import numpy as np
 
-import models.networks as networks
-from models.base_model import BaseModel
-from models.input_process import *
-from models.loss_collector import LossCollector, loss_backward
-from models.face_refiner import FaceRefineModel
-from util.util import random_roll
+import few_shot_vid2vid.models.networks as networks
+from few_shot_vid2vid.models.base_model import BaseModel
+from few_shot_vid2vid.models.input_process import *
+from few_shot_vid2vid.models.loss_collector import LossCollector, loss_backward
+from few_shot_vid2vid.models.face_refiner import FaceRefineModel
+from few_shot_vid2vid.util.util import random_roll
 
 class Vid2VidModel(BaseModel):
     def name(self):

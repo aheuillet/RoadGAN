@@ -19,7 +19,7 @@ from kivymd.toast import toast
 from kivymd import images_path
 from kivymd.uix.bottomsheet import MDCustomBottomSheet
 
-#from few_shot_vid2vid.test import infer_images
+from few_shot_vid2vid.test import infer_images
 from utils import recompose_video, decompose_video
 import os
 import sys
@@ -146,11 +146,11 @@ class RoadGANGUI(MDApp):
         self.settings_open = False
         self.input_path = None
         self.output_path = './'
-        self.weather = "clear"
+        self.weather = ""
         self.day_time = "daylight"
-        self.urban_style = "Berlin"
+        self.urban_style = "Munster"
         self.weather_conditions = [{"icon": "weather-sunny", "text": "clear"}, {"icon": 'weather-fog', "text": "fog"}, {"icon": "weather-pouring", "text": 'rain'}, {"icon": "weather-snowy", "text": 'snow'}, {"icon": "weather-cloudy", "text": 'clouds'}]
-        self.urban_styles = [{"icon": "home-city", "text": 'Berlin'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Canada'}, {"icon": "home-city", "text": 'China'}]
+        self.urban_styles = [{"icon": "home-city", "text": 'Munster'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Canada'}, {"icon": "home-city", "text": 'China'}]
         self.day_times = [{"icon": "weather-sunset-up", "text":'dawn'}, {"icon": "weather-sunny", "text": 'daylight'}, {"icon": "weather-sunset", "text": 'dusk'}, {"icon": "weather-night", "text": 'night'}]
 
     def build(self):
@@ -190,8 +190,9 @@ class RoadGANGUI(MDApp):
             self.settings.dismiss()
     
     def update_weather_condition(self, instance):
-        self.weather = instance.text
-        self.settings.screen.ids.weather_cond.set_item(self.weather)
+        if instance.text != 'clear':
+            self.weather = instance.text
+        self.settings.screen.ids.weather_cond.set_item(instance.text)
     
     def update_day_time(self, instance):
         self.day_time = instance.text
@@ -212,6 +213,7 @@ class RoadGANGUI(MDApp):
         if not self.manager_open:
             self.manager = MDFileManager(
                 exit_manager=self.exit_manager, select_path=func)
+            self.manager.ext = ['.mp4', '.avi']
             #self.manager.add_widget(self.file_manager)
             self.manager.show(os.path.dirname(path) if path else '/')  # output manager to the screen
             self.manager_open = True
@@ -249,23 +251,24 @@ class RoadGANGUI(MDApp):
     def launch_conversion(self):
         '''Called when the user clicks on the floating play button. 
         Lauches the conversion using vid2vid.'''
-        self.input_path = '/home/alexandre/Documents/RoadGAN/inference/video.mp4'
-        #video_name = decompose_video(self.input_path)
+        video_name = decompose_video(self.input_path)
         print("INPUT", self.input_path)
         print("OUTPUT", self.output_path)
-        #save_path = os.path.join(self.output_path, video_name + "_converted")
-        #infer_images(video_name, self.select_style_img(), save_path)
-        save_path = '/home/alexandre/Documents/RoadGAN/inference/seq_1'
+        save_path = os.path.join(self.output_path, video_name + "_converted")
+        infer_images(video_name, self.select_style_img(), save_path)
         os.chdir('attribute_hallucination/')
-        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes " + self.weather + "," + self.day_time)
-        os.system("python style_transfer.py --video_path" + save_path)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes " + self.day_time + " " + self.weather)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + save_path)
         os.chdir('..')
         recompose_video('attribute_hallucination/' + video_name + "_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
+    
+    def process_weather_conditions(self):
+        return self.weather if self.weather != "" else "clear"
     
     def select_style_img(self):
         '''Return the path to the style image corresponding to the scenario chosen
         by the user.'''
-        return os.path.join("inference/refs_img/images/", f"{self.get_urban_style().lower()}_{self.get_weather_conditions()}.png")
+        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_{self.process_weather_conditions()}.png")
 
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''Called when buttons are pressed on the mobile device..'''

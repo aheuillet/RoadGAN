@@ -9,8 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.utils.spectral_norm as sn
 
-from models.networks.base_network import BaseNetwork, batch_conv
-from models.networks.normalization import SPADE, SynchronizedBatchNorm2d
+from few_shot_vid2vid.models.networks.base_network import BaseNetwork, batch_conv
+from few_shot_vid2vid.models.networks.normalization import SPADE, SynchronizedBatchNorm2d
 
 def actvn(x):
     out = F.leaky_relu(x, 2e-1)

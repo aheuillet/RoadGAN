@@ -11,7 +11,7 @@ import random
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
-from util.distributed import master_only_print as print
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 class BaseDataset(data.Dataset):
     def __init__(self):

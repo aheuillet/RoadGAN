@@ -11,7 +11,7 @@ from PIL import Image
 import os
 import cv2
 
-from models.input_process import use_valid_labels
+from few_shot_vid2vid.models.input_process import use_valid_labels
 
 def visualize_label(opt, label_tensor, model=None): 
     if 'pose' in opt.dataset_mode:

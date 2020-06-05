@@ -11,9 +11,9 @@ import time
 import glob
 import scipy.misc
 from io import BytesIO, StringIO
-from util import util
-from util import html
-from util.distributed import master_only_print as print
+from . import util
+from . import html
+from .distributed import master_only_print as print
 
 class Visualizer():
     def __init__(self, opt):

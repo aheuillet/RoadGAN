@@ -8,10 +8,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from models.networks.sync_batchnorm import DataParallelWithCallback
-from models.vid2vid_model import Vid2VidModel
-from util.distributed import master_only
-from util.distributed import master_only_print as print
+from few_shot_vid2vid.models.networks.sync_batchnorm import DataParallelWithCallback
+from few_shot_vid2vid.models.vid2vid_model import Vid2VidModel
+from few_shot_vid2vid.util.distributed import master_only
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 def create_model(opt, epoch=0):            
     model = Vid2VidModel()

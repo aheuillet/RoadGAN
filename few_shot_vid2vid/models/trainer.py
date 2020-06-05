@@ -12,11 +12,11 @@ import fractions
 from subprocess import call
 def lcm(a,b): return abs(a * b)/fractions.gcd(a,b) if a and b else 0
 
-import util.util as util
-from util.visualizer import Visualizer
-from models.models import save_models, update_models
-from util.distributed import master_only, is_master
-from util.distributed import master_only_print as print
+import few_shot_vid2vid.util.util as util
+from few_shot_vid2vid.util.visualizer import Visualizer
+from few_shot_vid2vid.models.models import save_models, update_models
+from few_shot_vid2vid.util.distributed import master_only, is_master
+from few_shot_vid2vid.util.distributed import master_only_print as print
 
 class Trainer():    
     def __init__(self, opt, data_loader):

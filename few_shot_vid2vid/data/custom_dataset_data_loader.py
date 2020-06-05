@@ -6,8 +6,8 @@
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import torch.utils.data
 import torch.distributed as dist
-from data.base_data_loader import BaseDataLoader
-import data
+from few_shot_vid2vid.data.base_data_loader import BaseDataLoader
+import few_shot_vid2vid.data as data
 
 class CustomDatasetDataLoader(BaseDataLoader):
     def name(self):

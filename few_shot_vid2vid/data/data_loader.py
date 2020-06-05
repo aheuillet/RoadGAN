@@ -4,9 +4,10 @@
 # under the Nvidia Source Code License (1-way Commercial).
 # To view a copy of this license, visit
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
-from util.distributed import master_only_print as print
+from few_shot_vid2vid.util.distributed import master_only_print as print
+from few_shot_vid2vid.data.custom_dataset_data_loader import CustomDatasetDataLoader
+
 def CreateDataLoader(opt):
-    from data.custom_dataset_data_loader import CustomDatasetDataLoader
     data_loader = CustomDatasetDataLoader()
     print(data_loader.name())
     data_loader.initialize(opt)
