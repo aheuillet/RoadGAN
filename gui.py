@@ -250,12 +250,13 @@ class RoadGANGUI(MDApp):
     
     def launch_conversion(self):
         '''Called when the user clicks on the floating play button. 
-        Lauches the conversion using vid2vid.'''
+        Launches the conversion using vid2vid and HAL.'''
         video_name = decompose_video(self.input_path)
         print("INPUT", self.input_path)
         print("OUTPUT", self.output_path)
+        frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
         save_path = os.path.join(self.output_path, video_name + "_converted")
-        infer_images(video_name, self.select_style_img(), save_path)
+        infer_images(frame_dir_path, self.select_style_img(), save_path)
         os.chdir('attribute_hallucination/')
         os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes " + self.day_time + " " + self.weather)
         os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + save_path)

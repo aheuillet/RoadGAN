@@ -31,6 +31,7 @@ def encode_label(opt, label_map):
     else:
         bs, c, h, w = size        
 
+    print("LABEL MAP: ", label_map)
     label_nc = opt.label_nc
     if label_nc == 0:
         input_label = label_map.cuda()
