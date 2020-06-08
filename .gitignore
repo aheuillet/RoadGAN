@@ -141,6 +141,5 @@ few_shot_vid2vid/checkpoints/street/web/
 few_shot_vid2vid/datasets/
 few_shot_vid2vid/results/street/
 *.pth
-*.mp4
 *.tar.gz
 *.tar
