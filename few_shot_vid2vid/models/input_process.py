@@ -5,6 +5,7 @@
 # To view a copy of this license, visit
 # https://nvlabs.github.io/few-shot-vid2vid/License.txt
 import torch
+import numpy as np
 
 ############################# input processing ###################################
 def encode_input(opt, data_list, dummy_bs):
@@ -31,12 +32,11 @@ def encode_label(opt, label_map):
     else:
         bs, c, h, w = size        
 
-    print("LABEL MAP: ", label_map)
     label_nc = opt.label_nc
     if label_nc == 0:
         input_label = label_map.cuda()
     else:
-        # create one-hot vector for label map                         
+        # create one-hot vector for label map                 
         label_map = label_map.cuda()
         oneHot_size = (label_map.shape[0], label_nc, h, w)
         input_label = torch.cuda.FloatTensor(torch.Size(oneHot_size)).zero_()

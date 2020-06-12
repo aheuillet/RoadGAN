@@ -84,7 +84,7 @@ def infer_images(seg_img_dataroot, target_img_path, save_path):
     opt.loadSize = 512
     opt.fineSize = 512
     opt.seq_path = seg_img_dataroot
-    opt.ref_img_path = target_img_path.replace(target_img_name, "")
+    opt.ref_img_path = target_img_path
     opt.label_nc = 20
     opt.input_nc = 3
     opt.aspect_ratio = 2
@@ -102,4 +102,4 @@ def infer_images(seg_img_dataroot, target_img_path, save_path):
             
 
 if __name__ == "__main__":
-    infer_images('./toronto_label/01/', './ref_images/MU_clear/i.jpg', './synthetized/')
+    infer_images('inference/test', 'inference/refs_img/images/boston_clear/', './synthetized/')

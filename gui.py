@@ -148,9 +148,9 @@ class RoadGANGUI(MDApp):
         self.output_path = './'
         self.weather = ""
         self.day_time = "daylight"
-        self.urban_style = "Munster"
+        self.urban_style = "Stuttgart"
         self.weather_conditions = [{"icon": "weather-sunny", "text": "clear"}, {"icon": 'weather-fog', "text": "fog"}, {"icon": "weather-pouring", "text": 'rain'}, {"icon": "weather-snowy", "text": 'snow'}, {"icon": "weather-cloudy", "text": 'clouds'}]
-        self.urban_styles = [{"icon": "home-city", "text": 'Munster'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Canada'}, {"icon": "home-city", "text": 'China'}]
+        self.urban_styles = [{"icon": "home-city", "text": 'Stuttgart'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Boston'}, {"icon": "home-city", "text": 'China'}]
         self.day_times = [{"icon": "weather-sunset-up", "text":'dawn'}, {"icon": "weather-sunny", "text": 'daylight'}, {"icon": "weather-sunset", "text": 'dusk'}, {"icon": "weather-night", "text": 'night'}]
 
     def build(self):
@@ -256,9 +256,9 @@ class RoadGANGUI(MDApp):
         print("OUTPUT", self.output_path)
         frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
         save_path = os.path.join(self.output_path, video_name + "_converted")
-        infer_images(frame_dir_path, self.select_style_img(), save_path)
+        infer_images(frame_dir_path, os.path.abspath(self.select_style_img()), save_path)
         os.chdir('attribute_hallucination/')
-        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes " + self.day_time + " " + self.weather)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes fog") #+ self.day_time + " " + self.weather)
         os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + save_path)
         os.chdir('..')
         recompose_video('attribute_hallucination/' + video_name + "_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
@@ -269,7 +269,7 @@ class RoadGANGUI(MDApp):
     def select_style_img(self):
         '''Return the path to the style image corresponding to the scenario chosen
         by the user.'''
-        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_{self.process_weather_conditions()}.png")
+        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_{self.process_weather_conditions()}")
 
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''Called when buttons are pressed on the mobile device..'''
