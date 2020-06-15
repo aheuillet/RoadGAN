@@ -23,6 +23,7 @@ from few_shot_vid2vid.test import infer_images
 from utils import recompose_video, decompose_video
 import os
 import sys
+import shutil
 
 Builder.load_string('''
 
@@ -255,13 +256,15 @@ class RoadGANGUI(MDApp):
         print("INPUT", self.input_path)
         print("OUTPUT", self.output_path)
         frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
-        save_path = os.path.join(self.output_path, video_name + "_converted")
+        os.makedirs('./tmp')
+        save_path = os.path.join('./tmp', video_name + "_converted")
         infer_images(frame_dir_path, os.path.abspath(self.select_style_img()), save_path)
         os.chdir('attribute_hallucination/')
-        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + save_path + " --attributes fog") #+ self.day_time + " " + self.weather)
-        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + save_path)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + os.path.join('..', save_path) + " --attributes " + self.day_time + " " + self.weather)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + os.path.join('..', save_path))
         os.chdir('..')
-        recompose_video('attribute_hallucination/' + video_name + "_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
+        recompose_video('./tmp/' + video_name + "_converted_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
+        shutil.rmtree('./tmp')
     
     def process_weather_conditions(self):
         return self.weather if self.weather != "" else "clear"

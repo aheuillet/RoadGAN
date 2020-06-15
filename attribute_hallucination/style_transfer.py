@@ -20,11 +20,12 @@ if __name__ == "__main__":
     parser.add_argument('--image_size', type=int, default=512)
     parser.add_argument('--style_frequency', type=int, default=5, help='Frequency (in s) at which change of style image')
     parser.add_argument('--frames_per_second', type=int, default=24)
+    parser.add_argument('--save_folder', type=str, default='../tmp')
     opt = parser.parse_args()
 
     generated_path = os.path.join(opt.video_folder, 'generated')
     label_path = os.path.join(opt.video_folder, 'labels')
-    stylized_path = './' + opt.video_folder.split('/')[-1] + '_stylized'
+    stylized_path = os.path.join(opt.save_folder,  opt.video_folder.split('/')[-1] + '_stylized')
     os.makedirs(stylized_path, exist_ok=True)
 
 

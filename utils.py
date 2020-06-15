@@ -59,6 +59,6 @@ def resize_images(img_dir_path, size=(1024, 512)):
 
 
 
-#recompose_video('/home/alexandre/Documents/RoadGAN/inference/test_palette', '/home/alexandre/Documents/RoadGAN/inference/test_palette.mp4')
+#recompose_video('/home/alexandre/Documents/RoadGAN/test_germany_converted', '/home/alexandre/Documents/RoadGAN/inference/test_germany_converted.mp4')
 #decompose_video('./inference/test_germany.mp4')
 #resize_images('/home/alexandre/Documents/RoadGAN/inference/seq_1')
