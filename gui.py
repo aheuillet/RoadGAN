@@ -14,6 +14,7 @@ from kivymd.uix.dropdownitem import MDDropDownItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDIconButton, MDRaisedButton
 from kivymd.uix.dialog import BaseDialog
+from kivymd.uix.spinner import MDSpinner
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
 from kivymd import images_path
@@ -24,8 +25,9 @@ from utils import recompose_video, decompose_video
 import os
 import sys
 import shutil
+from threading import Thread
 
-Builder.load_string('''
+KV='''
 
 #:import utils kivy.utils
 
@@ -81,7 +83,7 @@ Builder.load_string('''
         
 
 
-<ExampleFileManager@BoxLayout>
+BoxLayout:
     orientation: 'vertical'
     spacing: dp(5)
 
@@ -99,35 +101,40 @@ Builder.load_string('''
         MDRoundFlatIconButton:
             text: "Choose input semantic video"
             icon: "folder"
-            pos_hint: {'center_x': .5, 'center_y': .6}
+            pos_hint: {'center_x': .5, 'center_y': .7}
             size_hint: dp(0.3), None
             on_release: app.file_manager_open()
 
         MDRoundFlatIconButton:
             text: "Choose output video save location"
             icon: "content-save"
-            pos_hint: {'center_x': .5, 'center_y': .5}
+            pos_hint: {'center_x': .5, 'center_y': .6}
             size_hint: dp(0.3), None
             on_release: app.file_manager_open(output=True)
 
         MDRoundFlatIconButton:
             text: "Change scenario"
             icon: "settings"
-            pos_hint: {'center_x': .5, 'center_y': .4}
+            pos_hint: {'center_x': .5, 'center_y': .5}
             size_hint: dp(0.3), None
             on_release: app.open_settings()
 
         MDFloatingActionButton:
             icon: "play"
-            pos_hint: {'center_x': .5, 'center_y': .3}
+            pos_hint: {'center_x': .5, 'center_y': .35}
             md_bg_color: app.theme_cls.primary_color
             elevation_normal: 11
-            on_release: app.launch_conversion()
-                
-
-
+            on_release: app.process_inference()
         
-''')
+        MDSpinner:
+            id: spinner
+            size_hint: None, None
+            size: dp(46), dp(46)
+            pos_hint: {'center_x': .5, 'center_y': .2}
+            active: False
+                
+        
+'''
 
 
 class ListDropDownLeft(ILeftBodyTouch, MDIconButton):
@@ -135,6 +142,7 @@ class ListDropDownLeft(ILeftBodyTouch, MDIconButton):
 
 class ListDropDownRight(IRightBodyTouch, MDDropDownItem):
     pass
+    
 
 class RoadGANGUI(MDApp):
     title = "RoadGAN"
@@ -142,21 +150,23 @@ class RoadGANGUI(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Window.bind(on_keyboard=self.events)
+        self.main_win = Builder.load_string(KV)
         self.manager_open = False
         self.manager = None
         self.settings_open = False
         self.input_path = None
         self.output_path = './'
-        self.weather = ""
+        self.weather = "clear"
         self.day_time = "daylight"
         self.urban_style = "Stuttgart"
         self.weather_conditions = [{"icon": "weather-sunny", "text": "clear"}, {"icon": 'weather-fog', "text": "fog"}, {"icon": "weather-pouring", "text": 'rain'}, {"icon": "weather-snowy", "text": 'snow'}, {"icon": "weather-cloudy", "text": 'clouds'}]
         self.urban_styles = [{"icon": "home-city", "text": 'Stuttgart'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Boston'}, {"icon": "home-city", "text": 'China'}]
         self.day_times = [{"icon": "weather-sunset-up", "text":'dawn'}, {"icon": "weather-sunny", "text": 'daylight'}, {"icon": "weather-sunset", "text": 'dusk'}, {"icon": "weather-night", "text": 'night'}]
+        self.inference_thread = Thread(target=self.launch_conversion)
 
     def build(self):
         self.theme_cls.primary_palette = "Amber"
-        return Factory.ExampleFileManager()
+        return self.main_win
 
     def open_settings(self):
         self.settings = MDCustomBottomSheet(screen=Factory.SettingsScenario()) 
@@ -249,22 +259,29 @@ class RoadGANGUI(MDApp):
         self.manager.close()
         self.manager_open = False
     
-    def launch_conversion(self):
+    def process_inference(self):
         '''Called when the user clicks on the floating play button. 
         Launches the conversion using vid2vid and HAL.'''
+        if self.inference_thread.is_alive():
+            self.inference_thread.join()
+        self.main_win.ids.spinner.active = True
+        self.inference_thread.start()
+    
+    def launch_conversion(self):
         video_name = decompose_video(self.input_path)
-        print("INPUT", self.input_path)
-        print("OUTPUT", self.output_path)
         frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
         os.makedirs('./tmp')
         save_path = os.path.join('./tmp', video_name + "_converted")
         infer_images(frame_dir_path, os.path.abspath(self.select_style_img()), save_path)
+        weather = "" if self.weather == "clear" else self.weather
         os.chdir('attribute_hallucination/')
-        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + os.path.join('..', save_path) + " --attributes " + self.day_time + " " + self.weather)
+        os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + os.path.join('..', save_path) + " --attributes " + self.day_time + " " + weather)
         os.system("export MKL_SERVICE_FORCE_INTEL=1 && python style_transfer.py --video_folder " + os.path.join('..', save_path))
         os.chdir('..')
         recompose_video('./tmp/' + video_name + "_converted_stylized/", os.path.join(self.output_path, video_name + "_converted.mp4"))
         shutil.rmtree('./tmp')
+        self.main_win.ids.spinner.active = False
+        toast('Inference finished!')
     
     def process_weather_conditions(self):
         return self.weather if self.weather != "" else "clear"
