@@ -28,6 +28,8 @@ from semantic_segmentation_pytorch.models import ModelBuilder, SegmentationModul
 
 
 class StyleGenerator:
+    '''Class holding methods related to transient attributes style generation. 
+    This will attempt to use a CUDA compatible GPU if available.'''
 
     def __init__(self, image_size, imageSize, video_path, model_path, selected_attribute, attribute_path='./fixed_attribute.npy', manual_seed=0, workers=2, gpu_ids=[0], batchSize=1, nz=100):
         if manual_seed is None:
@@ -39,7 +41,7 @@ class StyleGenerator:
             torch.cuda.set_device(gpu_ids[0])
             torch.cuda.manual_seed_all(manual_seed)
 
-        #cudnn.benchmark = True
+        cudnn.benchmark = True
 
         ngpu = len(gpu_ids)
         self.nc = 3
@@ -90,6 +92,7 @@ class StyleGenerator:
         self.images = self.detect_reference_images()
     
     def detect_reference_images(self):
+        '''Detects how many source images will be used for hallucinating a new style.'''
         images = []
         count = 0
         for i in sorted(os.listdir(self.video_path)):
@@ -105,11 +108,13 @@ class StyleGenerator:
         return images
 
     def process_selected_attributes(self):
+        '''Update the transient attribute array to increase the selected attributes.'''
         for a in self.selected_attribute:
             index = self.attributes.index(a)
             self.transient_attribute[0, index] += 10
 	
     def load_segmentation_module(self):
+        '''Load the MIT CSAIL segmentation module used for segmenting the source images.'''
         model_path = "./semantic_segmentation_pytorch/ade20k-resnet50dilated-ppm_deepsup"
         suffix = "_epoch_20.pth"
         arch_encoder = 'resnet50dilated'
@@ -142,6 +147,7 @@ class StyleGenerator:
         print("Segmentation Module was created!")
     
     def segment_images(self):
+        '''Segment all the source images.'''
         self.load_segmentation_module()
         num_val = -1
         list_test = []
@@ -203,7 +209,11 @@ class StyleGenerator:
         gc.collect()
         torch.cuda.empty_cache()
     
-    def binary_encode_image(self,catImage):
+    def binary_encode_image(self, catImage):
+        '''Binary encode the given PIL image.
+        
+        type: catImage: PIL.Image.Image;
+        param: catImage: Image to be binary encoded;'''
         img_np = np.array(list(catImage.getdata()))
         binaryim = np.zeros((self.image_size*self.image_size, 8))
         binaryim = np.zeros((catImage.size[0]*catImage.size[1], 8))
@@ -215,6 +225,10 @@ class StyleGenerator:
         return binaryim.reshape(catImage.size[1], catImage.size[0], 8)
 
     def _colorencode(self, category_im):
+        '''Color the given image using predefined color palette.
+        
+        type: category_im: numpy.array;
+        param: category_im: the image to be colorized;'''
         colorcodes = sio.loadmat("./color150.mat")
         colorcodes = colorcodes['colors']
         idx = np.unique(category_im)
@@ -228,15 +242,25 @@ class StyleGenerator:
             colorCodeIm[b] = rgb
         return colorCodeIm
     
-    def transform_image(self, image, seg):
-		# Resize
+    def transform_image(self, seg):
+        '''Return colorized and grayscale versions of the given segmentation map.
+        
+        type: seg: PIL.Image.Image;
+        param: seg: a segmentation map;'''
         graycode = np.array(seg)
         colorcode = self._colorencode(graycode)
         graycode = Image.fromarray(graycode)
         colorcode = Image.fromarray(colorcode, 'RGB')
-        return image, colorcode, graycode
+        return colorcode, graycode
 
     def transform_and_resize_image(self, image, seg):
+        '''Return colorized and grayscale versions of the given segmentation map and also 
+        resize and crop the given image.
+        
+        type: seg: PIL.Image.Image;
+        param: seg: a segmentation map;
+        type: image: PIL.Image.Image;
+        param: image: an hallucinated style image;'''
         # Resize
         resize = transforms.Resize(self.image_size)
         image = resize(image)
@@ -246,9 +270,13 @@ class StyleGenerator:
         crop = transforms.CenterCrop((self.image_size, self.image_size))
         image = crop(image)
         seg = crop(seg)
-        return self.transform_image(image, seg)
+        return image, self.transform_image(seg)
     
     def init_z(self, batchsize):
+        '''Init a noise to be added to the generator latent space.
+        
+        type: batchsize: int;
+        param: batchsize: the current batchsize used for generation;'''
         self.noise.resize_(batchsize, 100, self.image_size, self.image_size).normal_(0, 1)
     
     def inverse_transform(self, X):

@@ -169,6 +169,8 @@ class RoadGANGUI(MDApp):
         return self.main_win
 
     def open_settings(self):
+        '''Create and open the settings bottom panel. This will add dropdown menus for selecting 
+        weather conditions, daylight conditions and the urban style.'''
         self.settings = MDCustomBottomSheet(screen=Factory.SettingsScenario()) 
         self.weather_menu = MDDropdownMenu(
             caller=self.settings.screen.ids.weather_cond,
@@ -197,23 +199,41 @@ class RoadGANGUI(MDApp):
         self.settings.open()
     
     def close_settings(self):
+        '''Close the settings bottom panel.'''
         if self.settings:
             self.settings.dismiss()
     
     def update_weather_condition(self, instance):
+        '''Set weather conditions according to the chosen item in the GUI.
+        
+        type: instance: MDDropDownMenuItem;
+        param: instance: The chosen menu item;'''
         if instance.text != 'clear':
             self.weather = instance.text
         self.settings.screen.ids.weather_cond.set_item(instance.text)
     
     def update_day_time(self, instance):
+        '''Set daylight conditions according to the chosen item in the GUI.
+        
+        type: instance: MDDropDownMenuItem;
+        param: instance: The chosen menu item;'''
         self.day_time = instance.text
         self.settings.screen.ids.day_time.set_item(self.day_time)
         
     def update_urban_style(self, instance):
+        '''Set urban style according to the chosen item in the GUI.
+        
+        type: instance: MDDropDownMenuItem;
+        param: instance: The chosen menu item;'''
         self.urban_style = instance.text
         self.settings.screen.ids.urban_style.set_item(self.urban_style) 
 
     def file_manager_open(self, output=False):
+        '''Open a new file manager for selecting either the input segmentation video or 
+        the output location for the synthesized video.
+        
+        :type output: bool;
+        :param output: If set to True, will open the file manager for selecting the output location;'''
         if output:
             func = self.select_output_path
             path = self.output_path
@@ -225,7 +245,6 @@ class RoadGANGUI(MDApp):
             self.manager = MDFileManager(
                 exit_manager=self.exit_manager, select_path=func)
             self.manager.ext = ['.mp4', '.avi']
-            #self.manager.add_widget(self.file_manager)
             self.manager.show(os.path.dirname(path) if path else '/')  # output manager to the screen
             self.manager_open = True
 
@@ -236,7 +255,6 @@ class RoadGANGUI(MDApp):
         :type path: str;
         :param path: path to the selected directory or file;
         '''
-
         self.exit_manager()
         self.input_path = path
         toast(path)
@@ -248,26 +266,26 @@ class RoadGANGUI(MDApp):
         :type path: str;
         :param path: path to the selected directory or file;
         '''
-
         self.exit_manager()
         self.output_path = path
         toast(path)
 
     def exit_manager(self, *args):
         '''Called when the user reaches the root of the directory tree.'''
-
         self.manager.close()
         self.manager_open = False
     
     def process_inference(self):
         '''Called when the user clicks on the floating play button. 
-        Launches the conversion using vid2vid and HAL.'''
+        Launches the conversion in a separated thread using vid2vid and HAL.'''
         if self.inference_thread.is_alive():
             self.inference_thread.join()
         self.main_win.ids.spinner.active = True
         self.inference_thread.start()
     
     def launch_conversion(self):
+        '''Converts the segmentation video selected in the GUI using vid2vid and HAL.
+        It also takes into account the selected reference image and weather/daylight conditions.'''
         video_name = decompose_video(self.input_path)
         frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
         os.makedirs('./tmp')
@@ -283,17 +301,13 @@ class RoadGANGUI(MDApp):
         self.main_win.ids.spinner.active = False
         toast('Inference finished!')
     
-    def process_weather_conditions(self):
-        return self.weather if self.weather != "" else "clear"
-    
     def select_style_img(self):
         '''Return the path to the style image corresponding to the scenario chosen
         by the user.'''
-        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_{self.process_weather_conditions()}")
+        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_clear")
 
     def events(self, instance, keyboard, keycode, text, modifiers):
-        '''Called when buttons are pressed on the mobile device..'''
-
+        '''Called when buttons are pressed on the keyboard while the file manager is open.'''
         if keyboard in (1001, 27):
             if self.manager_open:
                 self.manager.back()
