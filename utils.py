@@ -6,6 +6,7 @@ import random
 import numpy as np
 from PIL import Image
 
+
 def decompose_video(video_path):
     '''Decompose in png images the frames of the video located at video_path.
 
@@ -22,7 +23,8 @@ def decompose_video(video_path):
     with tqdm() as pbar:
         while success:
             pal = Image.open('inference/palette.png')
-            image = Image.fromarray(image).quantize(colors=20, palette=pal, dither=Image.NONE)  
+            image = Image.fromarray(image).quantize(
+                colors=20, palette=pal, dither=Image.NONE)
             image.save(os.path.join(save_path, "%d.png" % count))
             success, image = vidcap.read()
             count += 1
@@ -30,11 +32,10 @@ def decompose_video(video_path):
     return vid_name
 
 
-
 def recompose_video(img_dir_path, save_path):
     '''Recompose images into a MPEG-4 video. The images will be resized to (2048, 1024) 
     for better viewing quality.
-    
+
     type: img_dir_path: str;
     param: img_dir_path: path to the directory containing the frames of the video to recompose;
     type: save_path: str;
@@ -51,6 +52,7 @@ def recompose_video(img_dir_path, save_path):
             img = cv2.imread(os.path.join(img_dir_path, f))
             writer.write(img)
     writer.release()
+
 
 def resize_images(img_dir_path, size=(1024, 512)):
     '''Resize images present in the given directory to the given size.

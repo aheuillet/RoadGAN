@@ -1,6 +1,10 @@
+from semantic_segmentation_pytorch.models import ModelBuilder, SegmentationModule
+from semantic_segmentation_pytorch.lib.nn import user_scattered_collate, async_copy_to
+from semantic_segmentation_pytorch.dataset import TestDataset
+import semantic_segmentation_pytorch.lib.utils.data as torchdata
+from semantic_segmentation_pytorch.lib.utils import as_numpy, mark_volatile
 import gc
 from model import create_model
-from scipy.stats import truncnorm
 import torchvision.transforms as transforms
 from torch.autograd import Variable
 import functools
@@ -16,15 +20,7 @@ import numpy as np
 from PIL import Image
 import io
 import sys
-from time import sleep
 sys.path.append('.')
-
-# Semantic Segmentation Module
-from semantic_segmentation_pytorch.lib.utils import as_numpy, mark_volatile
-import semantic_segmentation_pytorch.lib.utils.data as torchdata
-from semantic_segmentation_pytorch.dataset import TestDataset
-from semantic_segmentation_pytorch.lib.nn import user_scattered_collate, async_copy_to
-from semantic_segmentation_pytorch.models import ModelBuilder, SegmentationModule
 
 
 class StyleGenerator:
@@ -88,9 +84,9 @@ class StyleGenerator:
         objectsMat = sio.loadmat('objectName150.mat')
         objects = objectsMat['objectNames']
         self.objects = objects[:, 0].tolist()
-        
+
         self.images = self.detect_reference_images()
-    
+
     def detect_reference_images(self):
         '''Detects how many source images will be used for hallucinating a new style.'''
         images = []
@@ -112,7 +108,7 @@ class StyleGenerator:
         for a in self.selected_attribute:
             index = self.attributes.index(a)
             self.transient_attribute[0, index] += 10
-	
+
     def load_segmentation_module(self):
         '''Load the MIT CSAIL segmentation module used for segmenting the source images.'''
         model_path = "./semantic_segmentation_pytorch/ade20k-resnet50dilated-ppm_deepsup"
@@ -145,7 +141,7 @@ class StyleGenerator:
         self.segmentation_module.cuda()
         self.segmentation_module.eval()
         print("Segmentation Module was created!")
-    
+
     def segment_images(self):
         '''Segment all the source images.'''
         self.load_segmentation_module()
@@ -167,7 +163,7 @@ class StyleGenerator:
             collate_fn=user_scattered_collate,
             num_workers=5,
             drop_last=True)
-        
+
         print("Semantic segmentation of images...")
         pbar = tqdm(total=len(loader_val))
         for batch_data in loader_val:
@@ -175,7 +171,7 @@ class StyleGenerator:
             batch_data = batch_data[0]
             filename = os.path.basename(batch_data['info']).split('.')[0]
             segSize = (batch_data['img_ori'].shape[0],
-                    batch_data['img_ori'].shape[1])
+                       batch_data['img_ori'].shape[1])
             img_resized_list = batch_data['img_data']
 
             with torch.no_grad():
@@ -190,7 +186,8 @@ class StyleGenerator:
                     feed_dict = async_copy_to(feed_dict, 0)
 
                     # forward pass
-                    pred_tmp = self.segmentation_module(feed_dict, segSize=segSize)
+                    pred_tmp = self.segmentation_module(
+                        feed_dict, segSize=segSize)
                     scores = scores + pred_tmp / len(opt.imgSizes)
 
                 _, preds = torch.max(scores, dim=1)
@@ -199,26 +196,26 @@ class StyleGenerator:
                 preds[where_are_NaNs] = 0
                 preds = preds.astype('uint8') + 1
                 imgGray = Image.fromarray(preds)
-                imgGray.save(os.path.join(self.label_path, filename + '_LayGray.png'), "PNG")
+                imgGray.save(os.path.join(self.label_path,
+                                          filename + '_LayGray.png'), "PNG")
                 pbar.update()
-					
 
         # Freeing segmentation module
         del self.segmentation_module
 
         gc.collect()
         torch.cuda.empty_cache()
-    
+
     def binary_encode_image(self, catImage):
         '''Binary encode the given PIL image.
-        
+
         type: catImage: PIL.Image.Image;
         param: catImage: Image to be binary encoded;'''
         img_np = np.array(list(catImage.getdata()))
         binaryim = np.zeros((self.image_size*self.image_size, 8))
         binaryim = np.zeros((catImage.size[0]*catImage.size[1], 8))
         for i in range(150):
-            a = np.where(img_np==(i + 1))[0]
+            a = np.where(img_np == (i + 1))[0]
             for j in a:
                 binaryim[j, :] = self.binarycodes[i, :]
 
@@ -226,7 +223,7 @@ class StyleGenerator:
 
     def _colorencode(self, category_im):
         '''Color the given image using predefined color palette.
-        
+
         type: category_im: numpy.array;
         param: category_im: the image to be colorized;'''
         colorcodes = sio.loadmat("./color150.mat")
@@ -241,10 +238,10 @@ class StyleGenerator:
             rgb = colorcodes[idx[i] - 1]
             colorCodeIm[b] = rgb
         return colorCodeIm
-    
+
     def transform_image(self, seg):
         '''Return colorized and grayscale versions of the given segmentation map.
-        
+
         type: seg: PIL.Image.Image;
         param: seg: a segmentation map;'''
         graycode = np.array(seg)
@@ -256,7 +253,7 @@ class StyleGenerator:
     def transform_and_resize_image(self, image, seg):
         '''Return colorized and grayscale versions of the given segmentation map and also 
         resize and crop the given image.
-        
+
         type: seg: PIL.Image.Image;
         param: seg: a segmentation map;
         type: image: PIL.Image.Image;
@@ -264,27 +261,35 @@ class StyleGenerator:
         # Resize
         resize = transforms.Resize(self.image_size)
         image = resize(image)
-        resize = transforms.Resize(self.image_size, interpolation=Image.NEAREST)
+        resize = transforms.Resize(
+            self.image_size, interpolation=Image.NEAREST)
         seg = resize(seg)
         # Center crop
         crop = transforms.CenterCrop((self.image_size, self.image_size))
         image = crop(image)
         seg = crop(seg)
         return image, self.transform_image(seg)
-    
+
     def init_z(self, batchsize):
         '''Init a noise to be added to the generator latent space.
-        
+
         type: batchsize: int;
         param: batchsize: the current batchsize used for generation;'''
-        self.noise.resize_(batchsize, 100, self.image_size, self.image_size).normal_(0, 1)
-    
+        self.noise.resize_(batchsize, 100, self.image_size,
+                           self.image_size).normal_(0, 1)
+
     def inverse_transform(self, X):
+        '''Inverse the transformation done to the tensor to recreate an image.
+
+        type: X: numpy.array;
+        param: X: the tensor for which to inverse the transformation;'''
         npx = self.image_size
         X = (np.reshape(X, (-1, self.nc, npx, npx)).transpose(0, 2, 3, 1)+1.)/2.*255
         return X
-    
+
     def process_images(self):
+        '''Preprocess all the source images and generate style images from a selected pool of images, contained in self.images.
+        Generating style images from only a fraction of the source images accelerates the process whilst not degrading the style transfer quality.'''
         self.segment_images()
         self.process_selected_attributes()
         os.makedirs(self.generated_path)
@@ -293,23 +298,32 @@ class StyleGenerator:
         for i in tqdm(self.images):
             img_path = os.path.join(self.video_path, i)
             basename = os.path.basename(i).split('.')[0]
-            label_img_path = os.path.join(self.label_path, basename + '_LayGray.png') 
+            label_img_path = os.path.join(
+                self.label_path, basename + '_LayGray.png')
             img_original = Image.open(img_path)
             img_gray = Image.open(label_img_path)
-            img_original_resized, img_original_color_resized, img_original_gray_resized = self.transform_and_resize_image(img_original, img_gray)
-            img_original_gray_resized.save(os.path.join(self.label_path, basename + '_LayGrayResized.png'), "PNG")
+            img_original_resized, img_original_color_resized, img_original_gray_resized = self.transform_and_resize_image(
+                img_original, img_gray)
+            img_original_gray_resized.save(os.path.join(
+                self.label_path, basename + '_LayGrayResized.png'), "PNG")
 
-            segment_binary = self.binary_encode_image(img_original_gray_resized)
-            objectcategories = np.reshape(np.array(list(img_original_gray_resized.getdata())), (img_original_gray_resized.size[0], img_original_gray_resized.size[1]))
+            segment_binary = self.binary_encode_image(
+                img_original_gray_resized)
+            objectcategories = np.reshape(np.array(list(img_original_gray_resized.getdata(
+            ))), (img_original_gray_resized.size[0], img_original_gray_resized.size[1]))
             cat_np = objectcategories
             cat = torch.from_numpy(cat_np).float()
             self.category.resize_as_(cat.cuda()).copy_(cat)
             self.init_z(1)
             self.generate_style_image(segment_binary, basename)
 
-
-
     def generate_style_image(self, segment_binary, basename):
+        '''Hallucinate a style image from a binary encoded segmentation map and a set of transient attribute properties.
+
+        type: segment_binary: numpy.array;
+        param: segment_binary: a binary encoded segmentation map;
+        type: basename: str;
+        param: basename: name of the image from which hallucinate;'''
         seg_np = segment_binary
         seg_np = seg_np[np.newaxis]
         seg_np = np.transpose(seg_np, (0, 3, 1, 2))
@@ -335,7 +349,7 @@ class StyleGenerator:
         gen_im = gen_im[0]
         im = Image.fromarray(np.uint8(gen_im))
         im.save(os.path.join(self.generated_path, basename + '_G.png'))
-        
+
         torch.cuda.empty_cache()
         gc.collect()
         print('Generation completed!')
@@ -355,11 +369,13 @@ if __name__ == "__main__":
                         help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 
     parser.add_argument('--manualSeed', type=int, help='manual seed')
-    parser.add_argument('--model_path', default='./pretrained_models/sgn_enhancer_G_latest.pth', help="pretrained model path")
+    parser.add_argument(
+        '--model_path', default='./pretrained_models/sgn_enhancer_G_latest.pth', help="pretrained model path")
     parser.add_argument('--image_size', type=int, default=256)
     parser.add_argument('--isTest', action='store_true', help='test')
     parser.add_argument('--video_path', default='./video')
-    parser.add_argument('--attributes', type=str, nargs='+', help='attributes to be present in the synthesized images')
+    parser.add_argument('--attributes', type=str, nargs='+',
+                        help='attributes to be present in the synthesized images')
 
     # Semantic Segmentation Module Options
     parser.add_argument('--imgSizes', default=[300, 400, 500, 600],
@@ -376,5 +392,6 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     print(opt)
 
-    SG = StyleGenerator(opt.image_size, opt.imageSize, opt.video_path, opt.model_path, opt.attributes)
+    SG = StyleGenerator(opt.image_size, opt.imageSize,
+                        opt.video_path, opt.model_path, opt.attributes)
     SG.process_images()
