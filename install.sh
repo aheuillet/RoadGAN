@@ -13,9 +13,12 @@ echo "Creating conda env and installing requirements..."
 conda env create  --file requirements.txt
 echo "...done"
 
+sudo apt update && sudo apt install python-pip
+pip install gdown 
+
 echo "Downloading attribute hallucination checkpoint..."
 mkdir attribute_hallucination/pretrained_models/
-wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=17ydh2x0Va8t315_p_7I20JFCYuLXRu_Y' -O attribute_hallucination/pretrained_models/sgn_enhancer_G_latest.pth
+gdown 'https://drive.google.com/uc?id=17ydh2x0Va8t315_p_7I20JFCYuLXRu_Y' -O attribute_hallucination/pretrained_models/sgn_enhancer_G_latest.pth
 echo "...done"
 
 echo "Downloading semantic segmentation checkpoint..."

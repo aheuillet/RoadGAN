@@ -105,6 +105,7 @@ dependencies:
     - chardet==3.0.4
     - docutils==0.16
     - dominate==2.5.1
+    - gdown==3.11.1
     - get==2019.4.13
     - idna==2.9
     - imagesize==1.2.0

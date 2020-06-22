@@ -10,8 +10,6 @@ __pycache__/
 *.so
 
 # Images
-*.png
-*.jpg
 
 # Distribution / packaging
 .Python
