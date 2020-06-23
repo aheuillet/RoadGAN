@@ -28,9 +28,9 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
         self.opt = opt     
         self.L_is_label = self.opt.label_nc != 0 
           
-        self.L_paths = sorted(self.make_dataset(opt.seq_path))
-        self.ref_I_paths = sorted(self.make_dataset(opt.ref_img_path))
-        self.ref_L_paths = sorted(self.make_dataset(opt.ref_img_path.replace('images', 'labels')))
+        self.L_paths = self.make_dataset(opt.seq_path)
+        self.ref_I_paths = self.make_dataset(opt.ref_img_path)
+        self.ref_L_paths = self.make_dataset(opt.ref_img_path.replace('images', 'labels'))
     
     def __getitem__(self, index):    
         opt = self.opt        
@@ -77,6 +77,8 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
 
     def make_dataset(self, datapath):
         files = []
-        for f in os.listdir(datapath):
+        for f in sorted(os.listdir(datapath), key=lambda x: int(x.split(".")[0])):
             files.append(os.path.join(datapath, f))
+        print("DATAPATH: ", datapath)
+        print("FILES: ", files)
         return files

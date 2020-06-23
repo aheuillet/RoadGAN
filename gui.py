@@ -158,9 +158,9 @@ class RoadGANGUI(MDApp):
         self.output_path = './'
         self.weather = "clear"
         self.day_time = "daylight"
-        self.urban_style = "Stuttgart"
+        self.urban_style = "Munster"
         self.weather_conditions = [{"icon": "weather-sunny", "text": "clear"}, {"icon": 'weather-fog', "text": "fog"}, {"icon": "weather-pouring", "text": 'rain'}, {"icon": "weather-snowy", "text": 'snow'}, {"icon": "weather-cloudy", "text": 'clouds'}]
-        self.urban_styles = [{"icon": "home-city", "text": 'Stuttgart'}, {"icon": "home-city", "text": 'England'}, {"icon": "home-city", "text": 'France'}, {"icon": "home-city", "text": 'Boston'}, {"icon": "home-city", "text": 'China'}]
+        self.urban_styles = [{"icon": "home-city", "text": 'Munster'}, {"icon": "home-city", "text": 'Los Angeles'}, {"icon": "home-city", "text": 'Paris'}, {"icon": "home-city", "text": 'Boston'}, {"icon": "home-city", "text": 'Beijing'}]
         self.day_times = [{"icon": "weather-sunset-up", "text":'dawn'}, {"icon": "weather-sunny", "text": 'daylight'}, {"icon": "weather-sunset", "text": 'dusk'}, {"icon": "weather-night", "text": 'night'}]
         self.inference_thread = Thread(target=self.launch_conversion)
 
@@ -304,7 +304,8 @@ class RoadGANGUI(MDApp):
     def select_style_img(self):
         '''Return the path to the style image corresponding to the scenario chosen
         by the user.'''
-        return os.path.join("inference/refs_img/images/", f"{self.urban_style.lower()}_clear")
+        style = self.urban_style.lower().replace(" ", "_") 
+        return os.path.join("inference/refs_img/images/", f"{style}_clear")
 
     def events(self, instance, keyboard, keycode, text, modifiers):
         '''Called when buttons are pressed on the keyboard while the file manager is open.'''
