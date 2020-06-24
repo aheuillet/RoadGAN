@@ -67,3 +67,5 @@ def resize_images(img_dir_path, size=(1024, 512)):
         p = os.path.join(img_dir_path, f)
         img = Image.open(p).resize(size, resample=Image.LANCZOS)
         img.save(p)
+
+recompose_video('tmp/toronto_converted/', 'inference/toronto_converted_V2.mp4')

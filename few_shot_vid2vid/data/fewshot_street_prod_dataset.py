@@ -79,6 +79,4 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
         files = []
         for f in sorted(os.listdir(datapath), key=lambda x: int(x.split(".")[0])):
             files.append(os.path.join(datapath, f))
-        print("DATAPATH: ", datapath)
-        print("FILES: ", files)
         return files

@@ -240,7 +240,6 @@ class RoadGANGUI(MDApp):
         else:
             func = self.select_input_path
             path = self.input_path
-        print(self.manager_open)
         if not self.manager_open:
             self.manager = MDFileManager(
                 exit_manager=self.exit_manager, select_path=func)
