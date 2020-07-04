@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 
-def decompose_video(video_path):
+def decompose_video(video_path, process_pal=True):
     '''Decompose in png images the frames of the video located at video_path.
 
     type: video_path: str;
@@ -22,10 +22,13 @@ def decompose_video(video_path):
     print("Reading video file...")
     with tqdm() as pbar:
         while success:
-            pal = Image.open('inference/palette.png')
-            image = Image.fromarray(image).quantize(
-                colors=20, palette=pal, dither=Image.NONE)
-            image.save(os.path.join(save_path, "%d.png" % count))
+            if process_pal:
+                pal = Image.open('inference/palette.png')
+                image = Image.fromarray(image).quantize(
+                    colors=20, palette=pal, dither=Image.NONE)
+                image.save(os.path.join(save_path, "%d.png" % count))
+            else:
+                cv2.imwrite(os.path.join(save_path, "%d.png" % count), image)
             success, image = vidcap.read()
             count += 1
             pbar.update()
@@ -68,4 +71,6 @@ def resize_images(img_dir_path, size=(1024, 512)):
         img = Image.open(p).resize(size, resample=Image.LANCZOS)
         img.save(p)
 
-recompose_video('tmp/toronto_converted/', 'inference/toronto_converted_V2.mp4')
+if __name__ == "__main__":
+    recompose_video('tmp/scaner_converted/', 'inference/scaner_converted.mp4')
+    #decompose_video('inference/scaner.avi', process_pal=False)

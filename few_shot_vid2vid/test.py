@@ -71,7 +71,7 @@ def evaluate_many():
         print('process image... %s' % img_path)
         visualizer.save_images(webpage, visuals, img_path)
 
-def infer_images(seg_img_dataroot, target_img_path, save_path):
+def infer_images(seg_img_dataroot, target_img_path, save_path, scaner_segmentation):
     '''Launch the inference of label images using the pre-trained neural
     network.'''
     opt = TestOptions().parse()
@@ -89,6 +89,7 @@ def infer_images(seg_img_dataroot, target_img_path, save_path):
     opt.input_nc = 3
     opt.aspect_ratio = 2
     opt.resize_or_crop = 'scale_width_and_crop'
+    opt.segmentation_type = 'scaner' if scaner_segmentation else 'deeplab'
     opt, model, _, dataset = initialize(opt)
 
     os.makedirs(save_path, exist_ok=True)

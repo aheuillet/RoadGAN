@@ -13,6 +13,7 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
         parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')        
         parser.add_argument('--aspect_ratio', type=float, default=2)         
         parser.set_defaults(resize_or_crop='random_scale_and_crop')
+        parser.add_argument('--segmentation_type', type=str, default='deeplab', help='Type of segmentation used deeplab/scaner') 
         parser.set_defaults(niter=100)
         parser.set_defaults(niter_single=10)
         parser.set_defaults(niter_step=2)
@@ -64,7 +65,7 @@ class FewShotStreetProdDataset(FewshotStreetDataset):
         L = self.L
         for t in range(n_frames_total):
             idx = start_idx + t * t_step            
-            Lt = self.get_image(L_paths[idx], transform_L, is_label=self.L_is_label)
+            Lt = self.get_image(L_paths[idx], transform_L, is_label=self.L_is_label, seg_type=opt.segmentation_type)
             L = self.concat_frame(L, Lt.unsqueeze(0))
             
         self.L = L

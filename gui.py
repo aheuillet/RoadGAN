@@ -15,6 +15,7 @@ from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.button import MDIconButton, MDRaisedButton
 from kivymd.uix.dialog import BaseDialog
 from kivymd.uix.spinner import MDSpinner
+from kivymd.uix.selectioncontrol import MDCheckbox
 from kivymd.theming import ThemeManager
 from kivymd.toast import toast
 from kivymd import images_path
@@ -68,6 +69,15 @@ KV='''
                     id: day_time
                     text: "Day"
                     on_release: app.day_time_menu.open()
+            
+            OneLineAvatarIconListItem:
+                text: "ScaneR segmentation"
+                ListDropDownLeft:
+                    icon: "palette"
+                ListCheckpointRight:
+                    size_hint: None, None
+                    size: "48dp", "48dp"
+                    on_active: app.on_checkbox_active(*args)
             
             OneLineIconListItem:
                 text: "Exit"
@@ -142,7 +152,9 @@ class ListDropDownLeft(ILeftBodyTouch, MDIconButton):
 
 class ListDropDownRight(IRightBodyTouch, MDDropDownItem):
     pass
-    
+
+class ListCheckpointRight(IRightBodyTouch, MDCheckbox):
+    pass
 
 class RoadGANGUI(MDApp):
     title = "RoadGAN"
@@ -154,6 +166,7 @@ class RoadGANGUI(MDApp):
         self.manager_open = False
         self.manager = None
         self.settings_open = False
+        self.scaner = False
         self.input_path = None
         self.output_path = './'
         self.weather = "clear"
@@ -202,6 +215,16 @@ class RoadGANGUI(MDApp):
         '''Close the settings bottom panel.'''
         if self.settings:
             self.settings.dismiss()
+    
+    def on_checkbox_active(self, checkbox, value):
+        '''Called when clicking on the segmentation checkbox.
+        
+        type: value: bool;
+        param: value: active state of the checkbox;
+        type: checkbox: MDCheckbox;
+        param: checkbox: clicked checkbox instance;
+        '''
+        self.scaner = value
     
     def update_weather_condition(self, instance):
         '''Set weather conditions according to the chosen item in the GUI.
@@ -285,11 +308,11 @@ class RoadGANGUI(MDApp):
     def launch_conversion(self):
         '''Converts the segmentation video selected in the GUI using vid2vid and HAL.
         It also takes into account the selected reference image and weather/daylight conditions.'''
-        video_name = decompose_video(self.input_path)
+        video_name = decompose_video(self.input_path, process_pal=not(self.scaner))
         frame_dir_path = os.path.join(os.path.dirname(self.input_path), video_name)
         os.makedirs('./tmp')
         save_path = os.path.join('./tmp', video_name + "_converted")
-        infer_images(frame_dir_path, os.path.abspath(self.select_style_img()), save_path)
+        infer_images(frame_dir_path, os.path.abspath(self.select_style_img()), save_path, self.scaner)
         weather = "" if self.weather == "clear" else self.weather
         os.chdir('attribute_hallucination/')
         os.system("export MKL_SERVICE_FORCE_INTEL=1 && python generate_style.py --video_path " + os.path.join('..', save_path) + " --attributes " + self.day_time + " " + weather)

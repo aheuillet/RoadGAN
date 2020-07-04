@@ -19,7 +19,8 @@ class FewshotStreetDataset(BaseDataset):
         parser.set_defaults(dataroot='datasets/street/')
         parser.add_argument('--label_nc', type=int, default=20, help='# of input label channels')      
         parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')        
-        parser.add_argument('--aspect_ratio', type=float, default=2)         
+        parser.add_argument('--aspect_ratio', type=float, default=2)
+        parser.add_argument('--segmentation_type', type=str, default='deeplab', help='Type of segmentation used deeplab/scaner')         
         parser.set_defaults(resize_or_crop='random_scale_and_crop')
         parser.set_defaults(niter=100)
         parser.set_defaults(niter_single=10)
@@ -102,14 +103,26 @@ class FewshotStreetDataset(BaseDataset):
                        'path': I_paths[idx], 'seq': seq}
         return return_list
 
-    def get_image(self, A_path, transform_scaleA, is_label=False):
-        if is_label: return self.get_label_tensor(A_path, transform_scaleA)        
+    def get_image(self, A_path, transform_scaleA, is_label=False, seg_type='deeplab'):
+        if is_label: return self.get_label_tensor(A_path, transform_scaleA, seg_type)        
         A_img = self.read_data(A_path)
         A_scaled = transform_scaleA(A_img)        
         return A_scaled
 
-    def get_label_tensor(self, label_path, transform_label):
+    def get_label_tensor(self, label_path, transform_label, seg_type):
         label = self.read_data(label_path)
+
+        if seg_type == 'scaner':
+            scaner_pal = {"[  0 255 255]":0, "[253   0   0]":5, "[126 126 126]":9, "[ 44 128 153]":11}
+            label = np.array(label)
+            label2 = np.zeros((label.shape[0], label.shape[1]), dtype=np.uint8)
+            for x in range(label.shape[0]):
+                for y in range(label.shape[1]):
+                    s = str(label[x, y])
+                    if s in scaner_pal.keys():
+                        label2[x, y] = scaner_pal[s]
+            print(np.unique(label2))
+            label = Image.fromarray(label2)
 
         label_tensor = transform_label(label) * 255.0 
         return label_tensor
