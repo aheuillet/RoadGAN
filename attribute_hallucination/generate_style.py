@@ -268,7 +268,8 @@ class StyleGenerator:
         crop = transforms.CenterCrop((self.image_size, self.image_size))
         image = crop(image)
         seg = crop(seg)
-        return image, self.transform_image(seg)
+        colorcode, graycode = self.transform_image(seg)
+        return image, colorcode, graycode 
 
     def init_z(self, batchsize):
         '''Init a noise to be added to the generator latent space.
@@ -302,7 +303,7 @@ class StyleGenerator:
                 self.label_path, basename + '_LayGray.png')
             img_original = Image.open(img_path)
             img_gray = Image.open(label_img_path)
-            img_original_resized, img_original_color_resized, img_original_gray_resized = self.transform_and_resize_image(
+            img_original_resized, img_color_resized, img_original_gray_resized = self.transform_and_resize_image(
                 img_original, img_gray)
             img_original_gray_resized.save(os.path.join(
                 self.label_path, basename + '_LayGrayResized.png'), "PNG")
