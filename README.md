@@ -25,4 +25,4 @@ To start the GUI app, run `python gui.py`.
 Select the input segmentation video as well as the output save location and click on the start button to launch the conversion with the default parameters. These parameters can be changed by opening the "settings" menu and comprise:
 - The weather effect (rainy, cloudy, foggy, snowy or clear)
 - The time of day (day, dawn/dusk or night)
-- The urban style (Boston, Stuttgart, Paris, Los Angeles or Shanghai)
+- The urban style (Boston, Berlin, Paris, Los Angeles or Beijing)
